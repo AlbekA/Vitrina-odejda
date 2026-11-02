@@ -1,0 +1,6 @@
+{
+  "name": "Онлайн-витрина: Админ-панель Supabase",
+  "description": "Легкая визуальная админ-панель для управления товарами онлайн-витрины с интеграцией Supabase Storage и Database.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

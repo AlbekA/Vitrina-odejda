@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Админ-панель витрины</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fade-in {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- ==================== ЭКРАН ВХОДА (ТОЛЬКО ОКНО ВХОДА) ==================== -->
+  <div id="authScreen" class="min-h-screen w-full flex items-center justify-center p-4 bg-slate-100">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-slate-200/80 fade-in text-center">
+      
+      <!-- Иконка замка -->
+      <div class="w-14 h-14 mx-auto mb-4 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-xs">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <h1 class="text-xl font-bold text-slate-800 tracking-tight">Вход в админ-панель</h1>
+      <p class="text-xs text-slate-500 mt-1.5 mb-6">Введите пароль для управления онлайн-витриной</p>
+
+      <form id="authForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <input 
+            type="password" 
+            id="adminPasswordInput" 
+            placeholder="••••••••" 
+            required
+            autocomplete="current-password"
+            class="w-full px-4 py-3 text-center text-lg tracking-widest bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+          />
+        </div>
+
+        <div id="authError" class="hidden text-xs text-rose-600 font-medium bg-rose-50 py-2.5 px-3 rounded-xl border border-rose-200">
+          Неверный пароль. Попробуйте еще раз.
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-md transition active:scale-[0.98] text-sm flex items-center justify-center gap-2"
+        >
+          <span>Войти</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== ОСНОВНОЙ ИНТЕРФЕЙС АДМИНКИ ==================== -->
+  <div id="mainApp" class="hidden min-h-screen flex flex-col pb-10">
+    
+    <!-- Шапка страницы -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-800 leading-tight">Админ-панель витрины</h2>
+            <div class="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Supabase подключен</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Кнопка обновления -->
+          <button 
+            onclick="loadProducts()" 
+            title="Обновить список"
+            class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <!-- Выход -->
+          <button 
+            onclick="handleLogout()" 
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="hidden sm:inline">Выйти</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+
+      <!-- ================= СЕКЦИЯ 1: ФОРМА ДОБАВЛЕНИЯ ТОВАРА ================= -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+        <div class="px-5 py-4 sm:px-6 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 text-sm font-bold">
+              +
+            </span>
+            <h3 class="text-base font-bold text-slate-800">Добавить новый товар</h3>
+          </div>
+          <span class="text-xs text-slate-400">онлайн-витрина</span>
+        </div>
+
+        <form id="addProductForm" onsubmit="handleProductSubmit(event)" class="p-5 sm:p-6 space-y-5">
+
+          <!-- Загрузка изображения -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+              Фотография товара <span class="text-rose-500">*</span>
+            </label>
+            
+            <div 
+              id="dropzone"
+              class="relative border-2 border-dashed border-slate-200 hover:border-emerald-400 bg-slate-50/70 hover:bg-emerald-50/30 rounded-xl p-4 sm:p-6 text-center cursor-pointer transition flex flex-col items-center justify-center group"
+              onclick="document.getElementById('imageFileInput').click()"
+            >
+              <input 
+                type="file" 
+                id="imageFileInput" 
+                accept="image/*" 
+                class="hidden" 
+                onchange="handleImageSelection(event)"
+              />
+
+              <!-- Заглушка, когда файл не выбран -->
+              <div id="dropzoneEmpty" class="space-y-2">
+                <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-emerald-600 flex items-center justify-center shadow-xs transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div class="text-sm font-medium text-slate-700">
+                  <span class="text-emerald-600 font-semibold underline underline-offset-2">Выберите фото</span> или перетащите сюда
+                </div>
+                <p class="text-[11px] text-slate-400">Форматы: JPG, PNG, WEBP. Корзина: <span class="font-mono text-slate-500">product-images</span></p>
+              </div>
+
+              <!-- Превью выбранного фото -->
+              <div id="dropzonePreview" class="hidden flex flex-col sm:flex-row items-center gap-4 w-full">
+                <img 
+                  id="previewImg" 
+                  src="" 
+                  alt="Предпросмотр" 
+                  class="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-slate-200 shadow-sm"
+                />
+                <div class="text-left flex-1 min-w-0">
+                  <p id="previewFileName" class="text-sm font-semibold text-slate-800 truncate">photo.jpg</p>
+                  <p id="previewFileSize" class="text-xs text-slate-400 mt-0.5">0 KB</p>
+                  <div class="mt-2 flex gap-2">
+                    <button 
+                      type="button" 
+                      onclick="event.stopPropagation(); document.getElementById('imageFileInput').click();"
+                      class="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                    >
+                      Заменить фото
+                    </button>
+                    <button 
+                      type="button" 
+                      onclick="event.stopPropagation(); clearSelectedImage();"
+                      class="px-2.5 py-1 text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition"
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Название товара -->
+          <div>
+            <label for="productName" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Название товара <span class="text-rose-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="productName" 
+              placeholder="Например: Парфюм Velvet Amber или Футболка Oversize" 
+              required
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+            />
+          </div>
+
+          <!-- Сетка: Категория, Цена, Объем/Размер -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <!-- Категория -->
+            <div>
+              <label for="productCategory" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Категория <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <select 
+                  id="productCategory" 
+                  required
+                  class="w-full appearance-none px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pr-10 cursor-pointer"
+                >
+                  <option value="Мужские">Мужские</option>
+                  <option value="Женские">Женские</option>
+                  <option value="Унисекс" selected>Унисекс</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Цена -->
+            <div>
+              <label for="productPrice" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Цена <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <input 
+                  type="number" 
+                  id="productPrice" 
+                  placeholder="2500" 
+                  min="0"
+                  step="any"
+                  required
+                  class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pl-8"
+                />
+                <span class="absolute left-3 top-2.5 text-sm font-semibold text-slate-400">₽</span>
+              </div>
+            </div>
+
+            <!-- Объем / размер -->
+            <div>
+              <label for="productSize" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Объем / размер <span class="text-rose-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="productSize" 
+                placeholder="Например: 50 мл или M" 
+                required
+                class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+              />
+            </div>
+
+          </div>
+
+          <!-- Кнопка отправки формы -->
+          <div class="pt-2">
+            <button 
+              type="submit" 
+              id="submitProductBtn"
+              class="w-full py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-emerald-600/20 transition active:scale-[0.99] text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span id="submitBtnText">Опубликовать товар</span>
+            </button>
+            <p id="uploadStatusText" class="text-xs text-center text-slate-500 mt-2 hidden"></p>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- ================= СЕКЦИЯ 2: СПИСОК ТЕКУЩИХ ТОВАРОВ ================= -->
+      <section class="space-y-4">
+        
+        <!-- Заголовок и фильтры -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
+          <div class="flex items-center gap-2">
+            <h3 class="text-lg font-bold text-slate-800">Список товаров</h3>
+            <span id="productsCountBadge" class="bg-slate-200 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+              0
+            </span>
+          </div>
+
+          <!-- Фильтр по категориям -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+            <button onclick="setFilter('Все')" data-filter="Все" class="filter-btn active-filter px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-white">Все</button>
+            <button onclick="setFilter('Мужские')" data-filter="Мужские" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Мужские</button>
+            <button onclick="setFilter('Женские')" data-filter="Женские" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Женские</button>
+            <button onclick="setFilter('Унисекс')" data-filter="Унисекс" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">Унисекс</button>
+          </div>
+        </div>
+
+        <!-- Сетка карточек -->
+        <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Индикатор загрузки -->
+        <div id="productsLoading" class="py-12 text-center">
+          <div class="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p class="text-xs text-slate-500">Загрузка товаров из базы...</p>
+        </div>
+
+        <!-- Пустой список -->
+        <div id="productsEmpty" class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-8 text-center max-w-md mx-auto">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <h4 class="text-sm font-bold text-slate-700">Товары еще не добавлены</h4>
+          <p class="text-xs text-slate-400 mt-1">Используйте форму выше, чтобы добавить первый товар.</p>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ==================== УВЕДОМЛЕНИЯ (TOAST) ==================== -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
+
+  <!-- ==================== МОДАЛКА УДАЛЕНИЯ ==================== -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center border border-slate-100 shadow-xl fade-in">
+      <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 mx-auto mb-3 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+      <h3 class="text-base font-bold text-slate-800">Удалить этот товар?</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-5">Товар будет удален из базы данных.</p>
+      
+      <div class="flex gap-2">
+        <button 
+          onclick="closeDeleteModal()" 
+          class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition"
+        >
+          Отмена
+        </button>
+        <button 
+          id="confirmDeleteBtn" 
+          onclick="executeDeleteProduct()" 
+          class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-sm transition"
+        >
+          Да, удалить
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ЛОГИКА (JAVASCRIPT) ==================== -->
+  <script>
+    const SUPABASE_URL = "https://vhpsergcgxohylyaspbf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZocHNlcmdjZ3hvaHlseWFzcGJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MzkzNDIsImV4cCI6MjEwOTIxNTM0Mn0.1ryNsbK3lABDCHxStHL37_M3L7-Y6vnENjdj27CGP5Q";
+    const STORAGE_BUCKET = "product-images";
+    const TABLE_NAME = "products";
+    const ADMIN_PASSWORD = "admin1234";
+
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allProducts = [];
+    let currentFilter = 'Все';
+    let productToDeleteId = null;
+    let selectedImageFile = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const isAuth = sessionStorage.getItem("admin_authenticated");
+      if (isAuth === "true") {
+        showAdminPanel();
+      } else {
+        document.getElementById("authScreen").classList.remove("hidden");
+        document.getElementById("adminPasswordInput").focus();
+      }
+    });
+
+    function handleLogin(event) {
+      event.preventDefault();
+      const input = document.getElementById("adminPasswordInput");
+      const errorDiv = document.getElementById("authError");
+
+      if (input.value === ADMIN_PASSWORD) {
+        sessionStorage.setItem("admin_authenticated", "true");
+        errorDiv.classList.add("hidden");
+        showAdminPanel();
+      } else {
+        errorDiv.classList.remove("hidden");
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    function showAdminPanel() {
+      document.getElementById("authScreen").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
+      document.getElementById("mainApp").classList.add("fade-in");
+      loadProducts();
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem("admin_authenticated");
+      document.getElementById("mainApp").classList.add("hidden");
+      document.getElementById("authScreen").classList.remove("hidden");
+      document.getElementById("adminPasswordInput").value = "";
+      document.getElementById("authError").classList.add("hidden");
+    }
+
+    function handleImageSelection(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        showToast("Пожалуйста, выберите файл изображения (JPG, PNG, WEBP)", "error");
+        return;
+      }
+
+      selectedImageFile = file;
+
+      const previewImg = document.getElementById("previewImg");
+      const previewFileName = document.getElementById("previewFileName");
+      const previewFileSize = document.getElementById("previewFileSize");
+
+      previewFileName.textContent = file.name;
+      previewFileSize.textContent = (file.size / 1024).toFixed(1) + " KB";
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        document.getElementById("dropzoneEmpty").classList.add("hidden");
+        document.getElementById("dropzonePreview").classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedImage() {
+      selectedImageFile = null;
+      document.getElementById("imageFileInput").value = "";
+      document.getElementById("previewImg").src = "";
+      document.getElementById("dropzonePreview").classList.add("hidden");
+      document.getElementById("dropzoneEmpty").classList.remove("hidden");
+    }
+
+    const dropzone = document.getElementById("dropzone");
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('border-emerald-500', 'bg-emerald-50/50');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('border-emerald-500', 'bg-emerald-50/50');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+          const fakeEvent = { target: { files: files } };
+          handleImageSelection(fakeEvent);
+        }
+      }, false);
+    }
+
+    async function handleProductSubmit(event) {
+      event.preventDefault();
+
+      if (!selectedImageFile) {
+        showToast("Пожалуйста, прикрепите фотографию товара", "error");
+        return;
+      }
+
+      const name = document.getElementById("productName").value.trim();
+      const category = document.getElementById("productCategory").value;
+      const priceVal = parseFloat(document.getElementById("productPrice").value);
+      const size = document.getElementById("productSize").value.trim();
+
+      if (!name || isNaN(priceVal) || !size) {
+        showToast("Пожалуйста, заполните все обязательные поля", "error");
+        return;
+      }
+
+      const submitBtn = document.getElementById("submitProductBtn");
+      const submitBtnText = document.getElementById("submitBtnText");
+      const statusText = document.getElementById("uploadStatusText");
+
+      submitBtn.disabled = true;
+      submitBtnText.textContent = "Загрузка фото в Storage...";
+      statusText.classList.remove("hidden");
+      statusText.textContent = "1/2: Загружаем файл в корзину product-images...";
+
+      try {
+        const rawExt = selectedImageFile.name.split('.').pop() || 'jpg';
+        const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
+        const filePath = uniqueFileName;
+
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+          .from(STORAGE_BUCKET)
+          .upload(filePath, selectedImageFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          throw new Error("Ошибка загрузки в Storage: " + uploadError.message);
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(filePath);
+
+        const photoUrl = publicUrlData ? publicUrlData.publicUrl : '';
+
+        submitBtnText.textContent = "Сохранение в базу данных...";
+        statusText.textContent = "2/2: Добавляем запись в таблицу products...";
+
+        const newProductPayload = {
+          name: name,
+          category: category,
+          price: priceVal,
+          size: size,
+          image_url: photoUrl
+        };
+
+        let { data: insertedData, error: insertError } = await supabaseClient
+          .from(TABLE_NAME)
+          .insert([newProductPayload])
+          .select();
+
+        if (insertError && insertError.message && insertError.message.includes("column \"size\"")) {
+          const fallbackPayload = {
+            name: name,
+            category: category,
+            price: priceVal,
+            volume: size,
+            image_url: photoUrl
+          };
+          const retryRes = await supabaseClient
+            .from(TABLE_NAME)
+            .insert([fallbackPayload])
+            .select();
+          insertError = retryRes.error;
+          insertedData = retryRes.data;
+        }
+
+        if (insertError) {
+          throw new Error("Ошибка записи в базу: " + insertError.message);
+        }
+
+        showToast("Товар успешно добавлен!", "success");
+
+        document.getElementById("addProductForm").reset();
+        clearSelectedImage();
+
+        await loadProducts();
+
+      } catch (err) {
+        console.error("Ошибка при добавлении товара:", err);
+        showToast(err.message || "Не удалось опубликовать товар", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtnText.textContent = "Опубликовать товар";
+        statusText.classList.add("hidden");
+      }
+    }
+
+    async function loadProducts() {
+      const grid = document.getElementById("productsGrid");
+      const loading = document.getElementById("productsLoading");
+      const empty = document.getElementById("productsEmpty");
+
+      loading.classList.remove("hidden");
+      empty.classList.add("hidden");
+
+      try {
+        const { data, error } = await supabaseClient
+          .from(TABLE_NAME)
+          .select("*")
+          .order('id', { ascending: false });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        allProducts = data || [];
+        renderProducts();
+
+      } catch (err) {
+        console.error("Ошибка при получении товаров:", err);
+        loading.classList.add("hidden");
+        showToast("Не удалось загрузить список товаров: " + err.message, "error");
+      } finally {
+        loading.classList.add("hidden");
+      }
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById("productsGrid");
+      const empty = document.getElementById("productsEmpty");
+      const countBadge = document.getElementById("productsCountBadge");
+
+      const filtered = currentFilter === 'Все' 
+        ? allProducts 
+        : allProducts.filter(p => (p.category || '').toLowerCase() === currentFilter.toLowerCase());
+
+      countBadge.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        empty.classList.remove("hidden");
+        return;
+      }
+
+      empty.classList.add("hidden");
+
+      grid.innerHTML = filtered.map(product => {
+        const title = product.name || product.title || "Без названия";
+        const cat = product.category || "Унисекс";
+        const price = product.price ? Number(product.price).toLocaleString("ru-RU") : "0";
+        const sizeOrVolume = product.size || product.volume || "";
+        const imgUrl = product.image_url || product.photo_url || product.image || "";
+        const id = product.id;
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col group fade-in">
+            <div class="relative aspect-4/3 bg-slate-100 overflow-hidden">
+              ${imgUrl ? `
+                <img 
+                  src="${escapeHtml(imgUrl)}" 
+                  alt="${escapeHtml(title)}" 
+                  loading="lazy"
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  onerror="this.onerror=null; this.src='https://placehold.co/400x300/f1f5f9/94a3b8?text=Фото+недоступно';"
+                />
+              ` : `
+                <div class="w-full h-full flex items-center justify-center text-slate-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              `}
+
+              <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[11px] font-semibold tracking-wide backdrop-blur-md shadow-xs ${getCategoryBadgeStyle(cat)}">
+                ${escapeHtml(cat)}
+              </span>
+            </div>
+
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-emerald-700 transition" title="${escapeHtml(title)}">
+                  ${escapeHtml(title)}
+                </h4>
+                
+                <div class="flex items-center gap-2 mt-1">
+                  ${sizeOrVolume ? `
+                    <span class="inline-flex items-center text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded">
+                      ${escapeHtml(sizeOrVolume)}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <span class="text-xs text-slate-400 block font-normal">Цена</span>
+                  <span class="text-base font-extrabold text-slate-900">${price} ₽</span>
+                </div>
+
+                <button 
+                  onclick="openDeleteModal(${id})" 
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 rounded-lg transition active:scale-95"
+                  title="Удалить товар"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Удалить</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function getCategoryBadgeStyle(cat) {
+      if (cat === 'Мужские') return 'bg-sky-500/90 text-white';
+      if (cat === 'Женские') return 'bg-pink-500/90 text-white';
+      return 'bg-amber-500/90 text-white';
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === filter) {
+          btn.className = 'filter-btn active-filter px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-white';
+        } else {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+        }
+      });
+      renderProducts();
+    }
+
+    function openDeleteModal(productId) {
+      productToDeleteId = productId;
+      document.getElementById("deleteModal").classList.remove("hidden");
+    }
+
+    function closeDeleteModal() {
+      productToDeleteId = null;
+      document.getElementById("deleteModal").classList.add("hidden");
+    }
+
+    async function executeDeleteProduct() {
+      if (!productToDeleteId) return;
+
+      const deleteBtn = document.getElementById("confirmDeleteBtn");
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Удаление...";
+
+      try {
+        const { error } = await supabaseClient
+          .from(TABLE_NAME)
+          .delete()
+          .eq('id', productToDeleteId);
+
+        if (error) {
+          throw new Error("Ошибка при удалении: " + error.message);
+        }
+
+        showToast("Товар успешно удален", "success");
+        closeDeleteModal();
+        await loadProducts();
+
+      } catch (err) {
+        console.error("Ошибка при удалении:", err);
+        showToast(err.message || "Не удалось удалить товар", "error");
+      } finally {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Да, удалить";
+      }
+    }
+
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+
+      const isSuccess = type === "success";
+      const bgClass = isSuccess ? "bg-emerald-600 text-white" : "bg-rose-600 text-white";
+
+      toast.className = `${bgClass} pointer-events-auto px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3 text-sm font-medium fade-in`;
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          ${isSuccess ? `
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ` : `
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          `}
+          <span>${escapeHtml(message)}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white/80 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    }
+
+    function escapeHtml(text) {
+      if (typeof text !== 'string') return text ?? '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+
+</body>
+</html>
