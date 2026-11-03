@@ -1,18 +1,1131 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Онлайн-витрина: Админ-панель</title>
-    <meta name="description" content="Легкая визуальная админ-панель для управления товарами онлайн-витрины с интеграцией Supabase Storage и Database." />
-    <meta property="og:title" content="Онлайн-витрина: Админ-панель" />
-    <meta property="og:description" content="Легкая визуальная админ-панель для управления товарами онлайн-витрины с интеграцией Supabase Storage и Database." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>СВОБОДА ДВИЖЕНИЯ | Концептуальная витрина одежды</title>
+  <meta name="description" content="Премиальная коллекция одежды СВОБОДА ДВИЖЕНИЯ. Натуральные ткани, выверенный крой и легкий заказ в WhatsApp." />
 
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts: Cormorant Garamond & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            linen: '#F9F8F6',
+            sand: '#F3F1EC',
+            stone: '#E8E5DF',
+            charcoal: '#1A1A1A',
+            whatsapp: '#25D366',
+            whatsappDark: '#128C7E',
+          },
+          aspectRatio: {
+            'fashion': '4 / 5',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #FAF9F6;
+      color: #1A1A1A;
+    }
+    
+    /* Тонкий скроллбар */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF9F6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D8D4CC;
+      border-radius: 9999px;
+    }
+
+    /* Мягкие hover анимации для фото в стиле 12 STOREEZ */
+    .img-zoom-wrapper {
+      overflow: hidden;
+    }
+    .img-zoom {
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .group:hover .img-zoom {
+      transform: scale(1.04);
+    }
+
+    /* Модальное окно */
+    .modal-backdrop {
+      background: rgba(15, 15, 15, 0.55);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Плавное появление */
+    .fade-up {
+      animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="selection:bg-stone selection:text-charcoal flex flex-col min-h-screen">
+
+  <!-- ==================== ВЕРХНИЙ АННОНС-БАР ==================== -->
+  <aside class="bg-charcoal text-white text-[11px] sm:text-xs py-2 px-4 text-center tracking-widest uppercase font-light border-b border-charcoal/20">
+    <div class="max-w-7xl mx-auto flex items-center justify-center gap-2">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span>Новая коллекция SS'25 • Быстрая доставка по г. Ош, Кыргызстану и СНГ</span>
+    </div>
+  </aside>
+
+  <!-- ==================== ХЕДЕР (ШАПКА САЙТА) ==================== -->
+  <header class="sticky top-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#EBE7DF] transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 h-18 sm:h-20 flex items-center justify-between">
+      
+      <!-- Меню-навигация слева (десктоп) -->
+      <nav class="hidden md:flex items-center gap-8 text-xs tracking-wider uppercase font-medium text-neutral-600">
+        <a href="#catalog" onclick="filterCatalog('Все')" class="hover:text-black transition">Все изделия</a>
+        <a href="#catalog" onclick="filterCatalog('Женские')" class="hover:text-black transition">Женское</a>
+        <a href="#catalog" onclick="filterCatalog('Мужские')" class="hover:text-black transition">Мужское</a>
+        <a href="#about" class="hover:text-black transition">Шоурум</a>
+      </nav>
+
+      <!-- Логотип по центру (в стиле The Row / 12 STOREEZ) -->
+      <div class="flex-1 md:flex-none text-left md:text-center">
+        <a href="/" class="inline-block group">
+          <span class="font-serif text-2xl sm:text-3xl tracking-[0.22em] font-normal uppercase text-charcoal block leading-none">
+            СВОБОДА ДВИЖЕНИЯ
+          </span>
+          <span class="text-[9px] sm:text-[10px] tracking-[0.35em] text-neutral-500 uppercase block mt-1 font-light">
+            Concept Store &bull; Osh
+          </span>
+        </a>
+      </div>
+
+      <!-- Контакты справа -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Прямой звонок -->
+        <a 
+          href="tel:+996555123456" 
+          title="Позвонить прямо сейчас"
+          class="flex items-center gap-1.5 text-xs font-medium text-charcoal border border-neutral-300 hover:border-black rounded-full px-3.5 py-1.5 transition active:scale-95"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          <span class="hidden sm:inline font-mono tracking-tight">+996 555 12-34-56</span>
+          <span class="sm:hidden font-mono tracking-tight">Позвонить</span>
+        </a>
+
+        <!-- Быстрый WhatsApp в шапке -->
+        <a 
+          href="https://wa.me/996555123456" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="p-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-full transition"
+          title="Написать в WhatsApp"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.076-1.895-.447-1.488-.616-2.433-2.12-2.507-2.22-.074-.099-.607-.808-.607-1.542s.385-1.094.522-1.242c.137-.148.3-.186.4-.186.1 0 .2.001.288.006.092.004.216-.035.337.257.126.301.428 1.042.466 1.118.038.077.063.167.013.268-.05.101-.076.164-.151.252-.075.088-.158.196-.226.264-.075.074-.154.155-.066.306.088.151.391.644.839 1.043.578.514 1.066.674 1.217.749.151.076.24.063.329-.038.089-.101.382-.444.483-.596.101-.152.202-.126.34-.076.139.051.879.414 1.03.49.151.076.252.114.29.177.038.064.038.368-.106.773z"/>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== ГЛАВНЫЙ БАННЕР (QUIET LUXURY) ==================== -->
+  <section class="relative min-h-[480px] sm:min-h-[580px] lg:min-h-[640px] flex items-center border-b border-[#EBE7DF] overflow-hidden bg-[#FAF9F6]">
+    
+    <!-- Фоновое изображение со стильной парой: парень и девушка в дизайнерской одежде -->
+    <div class="absolute inset-0 z-0">
+      <img 
+        src="/assets/images/hero_couple_fashion_1793647259433.jpg" 
+        alt="Коллекция одежды СВОБОДА ДВИЖЕНИЯ" 
+        class="w-full h-full object-cover object-[70%_top] sm:object-[78%_center] lg:object-right-center"
+      />
+      <!-- Мягкий полупрозрачный градиент-скрим, чтобы фон не перебивал текст -->
+      <div class="absolute inset-0 bg-gradient-to-r from-[#FAF9F6]/95 via-[#FAF9F6]/85 sm:via-[#FAF9F6]/75 to-transparent"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#FAF9F6]/80 via-transparent to-transparent sm:hidden"></div>
+    </div>
+
+    <!-- Контент первого блока -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-20 lg:py-28 w-full">
+      <div class="max-w-xl space-y-4 sm:space-y-6">
+        
+        <span class="inline-block text-[11px] sm:text-xs uppercase tracking-[0.25em] text-neutral-600 font-semibold">
+          Коллекция Весна-Лето &bull; 2025
+        </span>
+
+        <h1 class="font-serif text-3xl sm:text-5xl lg:text-6xl text-charcoal font-normal tracking-tight leading-[1.12]">
+          Эстетика легкости и чистых линий
+        </h1>
+
+        <p class="text-xs sm:text-sm text-neutral-700 max-w-lg font-normal leading-relaxed">
+          Премиальные натуральные ткани: лен, шелк, кашемир и тонкий хлопок. Выверенная посадка для ощущения безупречного комфорта в каждом движении.
+        </p>
+        
+        <div class="pt-2 flex flex-wrap items-center gap-3">
+          <a 
+            href="#catalog" 
+            class="px-6 py-3.5 bg-charcoal hover:bg-neutral-800 text-white text-xs uppercase tracking-widest font-medium rounded-full transition active:scale-95 shadow-sm"
+          >
+            Смотреть каталог
+          </a>
+          <a 
+            href="https://wa.me/996555123456?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%BE%20%D0%BD%D0%BE%D0%B2%D0%BE%D0%B9%20%D0%BA%D0%BE%D0%BB%D0%BB%D0%B5%D0%BA%D1%86%D0%B8%D0%B8" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="px-5 py-3.5 bg-white/80 hover:bg-white backdrop-blur-md border border-neutral-300 hover:border-black text-charcoal text-xs uppercase tracking-widest font-medium rounded-full transition flex items-center gap-2 shadow-2xs"
+          >
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Консультация стилиста
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== СЕКЦИЯ КАТАЛОГА (ВИТРИНА) ==================== -->
+  <main id="catalog" class="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-16 w-full flex-1">
+    
+    <!-- Фильтры категорий и заголовок -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#EBE7DF]">
+      <div>
+        <h2 class="font-serif text-2xl sm:text-4xl text-charcoal font-normal tracking-tight">
+          Каталог изделий
+        </h2>
+        <p class="text-xs text-neutral-500 mt-1 font-light">
+          Нажмите на карточку товара для подробного обзора или закажите мгновенно в WhatsApp
+        </p>
+      </div>
+
+      <!-- Табы фильтрации (в стиле 12 STOREEZ и Gloria Jeans) -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <button 
+          onclick="filterCatalog('Все')" 
+          data-filter="Все" 
+          class="cat-tab active px-4 py-2 rounded-full font-medium transition bg-charcoal text-white tracking-wide"
+        >
+          Все изделия
+        </button>
+        <button 
+          onclick="filterCatalog('Женские')" 
+          data-filter="Женские" 
+          class="cat-tab px-4 py-2 rounded-full font-medium transition bg-white text-neutral-600 border border-neutral-200 hover:border-black tracking-wide"
+        >
+          Женское
+        </button>
+        <button 
+          onclick="filterCatalog('Мужские')" 
+          data-filter="Мужские" 
+          class="cat-tab px-4 py-2 rounded-full font-medium transition bg-white text-neutral-600 border border-neutral-200 hover:border-black tracking-wide"
+        >
+          Мужское
+        </button>
+        <button 
+          onclick="filterCatalog('Унисекс')" 
+          data-filter="Унисекс" 
+          class="cat-tab px-4 py-2 rounded-full font-medium transition bg-white text-neutral-600 border border-neutral-200 hover:border-black tracking-wide"
+        >
+          Унисекс
+        </button>
+      </div>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div id="catalogLoader" class="py-16 text-center">
+      <div class="w-8 h-8 border-2 border-charcoal border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-xs text-neutral-500 uppercase tracking-widest font-light">Синхронизация с витриной Supabase...</p>
+    </div>
+
+    <!-- Сетка каталога (Mobile First: 2 колонки на смартфонах, 3 на планшетах, 4 на десктопе) -->
+    <div id="productsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-10 pt-8">
+      <!-- Сюда динамически добавляются карточки товаров -->
+    </div>
+
+    <!-- Состояние, когда товаров не найдено -->
+    <div id="catalogEmpty" class="hidden py-16 text-center max-w-md mx-auto">
+      <p class="font-serif text-xl text-neutral-600">В этой категории пока нет изделий</p>
+      <button 
+        onclick="filterCatalog('Все')" 
+        class="mt-4 px-5 py-2.5 bg-charcoal text-white text-xs uppercase tracking-wider rounded-full"
+      >
+        Показать все товары
+      </button>
+    </div>
+
+  </main>
+
+  <!-- ==================== МОДАЛЬНОЕ ОКНО QUICK VIEW (БЫСТРЫЙ ПРОСМОТР) ==================== -->
+  <div id="quickViewModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto modal-backdrop" onclick="closeQuickView(event)">
+    <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-neutral-200 relative fade-up" onclick="event.stopPropagation()">
+      
+      <!-- Кнопка закрытия -->
+      <button 
+        onclick="closeQuickViewDirect()" 
+        class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-charcoal hover:bg-black hover:text-white flex items-center justify-center transition shadow-xs"
+        title="Закрыть (Esc)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 sm:p-8">
+        
+        <!-- Галерея фото изделия (до 5 фото) -->
+        <div class="space-y-3">
+          <div class="relative aspect-fashion w-full rounded-2xl overflow-hidden bg-stone shadow-xs group">
+            <img 
+              id="qvMainImage" 
+              src="" 
+              alt="Товар" 
+              class="w-full h-full object-cover object-top transition duration-300"
+            />
+
+            <!-- Стрелки навигации по фото (до 5 шт) -->
+            <button 
+              id="qvPrevBtn"
+              type="button"
+              onclick="prevQvPhoto(event)"
+              class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 hover:bg-white text-charcoal flex items-center justify-center backdrop-blur-md shadow-sm transition opacity-0 group-hover:opacity-100 cursor-pointer"
+              title="Предыдущее фото"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button 
+              id="qvNextBtn"
+              type="button"
+              onclick="nextQvPhoto(event)"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 hover:bg-white text-charcoal flex items-center justify-center backdrop-blur-md shadow-sm transition opacity-0 group-hover:opacity-100 cursor-pointer"
+              title="Следующее фото"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <!-- Счетчик фото (например, 1 / 5) -->
+            <div id="qvPhotoCounter" class="absolute bottom-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-charcoal/70 text-white text-[10px] font-mono tracking-wider backdrop-blur-md">
+              1 / 1
+            </div>
+          </div>
+
+          <!-- Дополнительные миниатюры для смены ракурса (до 5 шт) -->
+          <div id="qvThumbnails" class="flex gap-2 overflow-x-auto pb-1"></div>
+
+          <!-- Блок быстрой загрузки фото (до 5 шт) прямо в модальном окне -->
+          <div class="pt-1 flex items-center justify-between border-t border-neutral-100">
+            <span class="text-[11px] text-neutral-400 font-light">Фотографии изделия (до 5)</span>
+            <label class="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-700 hover:text-black bg-neutral-100 hover:bg-neutral-200 px-2.5 py-1 rounded-lg transition cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Загрузить фото</span>
+              <input type="file" id="qvUploadInput" accept="image/*" multiple class="hidden" onchange="handleQvUploadPhotos(event)" />
+            </label>
+          </div>
+          <p id="qvUploadStatus" class="hidden text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-medium"></p>
+        </div>
+
+        <!-- Описание и детали заказа -->
+        <div class="flex flex-col justify-between space-y-5">
+          <div class="space-y-3">
+            
+            <div class="flex items-center gap-2">
+              <span id="qvCategoryBadge" class="text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 font-semibold">
+                Категория
+              </span>
+              <span id="qvArticle" class="text-[11px] text-neutral-400 font-mono">
+                Арт. SD-024
+              </span>
+            </div>
+
+            <h3 id="qvTitle" class="font-serif text-2xl sm:text-3xl text-charcoal font-normal leading-tight">
+              Название изделия
+            </h3>
+
+            <!-- Цена -->
+            <div class="pt-1">
+              <span id="qvPrice" class="text-2xl font-bold tracking-tight text-charcoal">
+                0 сом
+              </span>
+            </div>
+
+            <div class="h-px bg-neutral-100 my-2"></div>
+
+            <!-- Выбор цвета -->
+            <div>
+              <div class="flex items-center justify-between text-xs mb-2">
+                <span class="font-medium text-neutral-700 uppercase tracking-wider text-[11px]">Цвет:</span>
+                <span id="qvSelectedColorName" class="text-neutral-500 font-light">Натуральный</span>
+              </div>
+              <div id="qvColorOptions" class="flex items-center gap-2.5">
+                <!-- Генерируются плашки цветов -->
+              </div>
+            </div>
+
+            <!-- Выбор размера -->
+            <div>
+              <div class="flex items-center justify-between text-xs mb-2">
+                <span class="font-medium text-neutral-700 uppercase tracking-wider text-[11px]">Размер:</span>
+                <span class="text-neutral-400 text-[11px]">Таблица размеров</span>
+              </div>
+              <div id="qvSizeOptions" class="flex flex-wrap gap-2">
+                <!-- Генерируются размеры -->
+              </div>
+            </div>
+
+            <!-- Информация о составе и посадке (как на референсе 12 STOREEZ) -->
+            <div class="space-y-2 pt-2 text-xs text-neutral-600 bg-neutral-50 p-3.5 rounded-xl border border-neutral-100">
+              <p id="qvComposition" class="leading-relaxed">
+                <strong class="font-semibold text-charcoal">Состав:</strong> 100% натуральные материалы, бережная сухая чистка.
+              </p>
+              <p id="qvFit" class="text-[11px] text-neutral-500 leading-relaxed">
+                <strong class="font-semibold text-charcoal">Посадка:</strong> Прямой свободный силуэт. Рост модели на фото 175 см, размер S.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Кнопка оформления в WhatsApp -->
+          <div class="pt-2">
+            <button 
+              id="qvWhatsappBtn" 
+              onclick="orderCurrentProductInWhatsapp()"
+              class="w-full py-4 px-6 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-semibold rounded-2xl shadow-md shadow-emerald-500/20 transition active:scale-[0.99] text-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.076-1.895-.447-1.488-.616-2.433-2.12-2.507-2.22-.074-.099-.607-.808-.607-1.542s.385-1.094.522-1.242c.137-.148.3-.186.4-.186.1 0 .2.001.288.006.092.004.216-.035.337.257.126.301.428 1.042.466 1.118.038.077.063.167.013.268-.05.101-.076.164-.151.252-.075.088-.158.196-.226.264-.075.074-.154.155-.066.306.088.151.391.644.839 1.043.578.514 1.066.674 1.217.749.151.076.24.063.329-.038.089-.101.382-.444.483-.596.101-.152.202-.126.34-.076.139.051.879.414 1.03.49.151.076.252.114.29.177.038.064.038.368-.106.773z"/>
+              </svg>
+              <span>Заказать в WhatsApp</span>
+            </button>
+            <p class="text-[11px] text-center text-neutral-400 mt-2">
+              Откроется чат с консультантом с уже заполненными данными о заказе
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== ФУТЕР (НИЖНЯЯ ЧАСТЬ САЙТА) ==================== -->
+  <footer id="about" class="bg-[#191919] text-[#E0DDD5] border-t border-neutral-800 pt-16 pb-12 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8">
+      
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-neutral-800">
+        
+        <!-- О бренде -->
+        <div class="md:col-span-4 space-y-4">
+          <span class="font-serif text-2xl tracking-[0.2em] font-normal uppercase text-white block">
+            СВОБОДА ДВИЖЕНИЯ
+          </span>
+          <p class="text-xs text-neutral-400 leading-relaxed max-w-sm font-light">
+            Концепт-стор одежды премиального кроя. Мы создаем гардероб вне времени, подчеркивающий индивидуальность и свободу каждого дня.
+          </p>
+          
+          <div class="pt-2 text-xs text-neutral-300 space-y-1 font-light">
+            <p><strong class="font-medium text-white">Адрес шоурума:</strong> Кыргызстан, г. Ош, ул. Ленина, 142</p>
+            <p><strong class="font-medium text-white">График работы:</strong> Ежедневно с 10:00 до 21:00</p>
+          </div>
+        </div>
+
+        <!-- Контакты и быстрые ссылки -->
+        <div class="md:col-span-4 space-y-3">
+          <h4 class="text-xs font-semibold text-white uppercase tracking-widest mb-3">
+            Связь и соцсети
+          </h4>
+          
+          <ul class="space-y-2.5 text-xs text-neutral-300">
+            <li>
+              <a href="tel:+996555123456" class="hover:text-white flex items-center gap-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span>Телефон: +996 555 12-34-56</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://wa.me/996555123456" target="_blank" rel="noopener noreferrer" class="hover:text-white flex items-center gap-2 transition">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Написать в WhatsApp (чат 24/7)</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" class="hover:text-white flex items-center gap-2 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-pink-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                <span>Instagram: @svoboda_dvizheniya</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Легкая встраиваемая карта расположения шоурума -->
+        <div class="md:col-span-4 space-y-2">
+          <h4 class="text-xs font-semibold text-white uppercase tracking-widest">
+            Наш шоурум на карте (г. Ош)
+          </h4>
+          <div class="w-full h-36 rounded-xl overflow-hidden bg-neutral-800 border border-neutral-700">
+            <iframe 
+              title="Шоурум Свобода Движения г. Ош"
+              width="100%" 
+              height="100%" 
+              frameborder="0" 
+              scrolling="no" 
+              marginheight="0" 
+              marginwidth="0" 
+              src="https://maps.google.com/maps?q=Osh%20Lenin%20street&t=&z=14&ie=UTF8&iwloc=&output=embed"
+              class="grayscale contrast-125 opacity-80 hover:opacity-100 transition"
+              loading="lazy"
+            ></iframe>
+          </div>
+          <p class="text-[10px] text-neutral-500">Удобная парковка рядом с бутиком</p>
+        </div>
+
+      </div>
+
+      <!-- Нижняя плашка с копирайтом и незаметной ссылкой для владельца -->
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500 gap-4">
+        <p>&copy; 2025 СВОБОДА ДВИЖЕНИЯ. Все права защищены.</p>
+
+        <!-- НЕЗАМЕТНАЯ ССЫЛКА С ЗАМОЧКОМ ДЛЯ ВЛАДЕЛЬЦА -->
+        <a 
+          href="/admin.html" 
+          class="inline-flex items-center gap-1.5 text-neutral-500 hover:text-neutral-300 py-1 px-2.5 rounded hover:bg-neutral-800/60 transition group font-mono text-[11px]"
+          title="Панель управления витриной"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-neutral-500 group-hover:text-emerald-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span class="tracking-tight">Вход для владельца</span>
+        </a>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ==================== ЛОГИКА ВИТРИНЫ (VANILLA JAVASCRIPT) ==================== -->
+  <script>
+    // -------------------------------------------------------------
+    // НАСТРОЙКИ МАГАЗИНА И SUPABASE
+    // -------------------------------------------------------------
+    const WHATSAPP_PHONE = "996555123456"; // Замените на реальный номер WhatsApp (без плюса)
+    const SUPABASE_URL = "https://vhpsergcgxohylyaspbf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZocHNlcmdjZ3hvaHlseWFzcGJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MzkzNDIsImV4cCI6MjEwOTIxNTM0Mn0.1ryNsbK3lABDCHxStHL37_M3L7-Y6vnENjdj27CGP5Q";
+    const TABLE_NAME = "products";
+
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Эталонная стартовая капсула в стиле 12 STOREEZ и концепт-стора
+    // (отображает реальные фотографии моделей в одежде)
+    const DEFAULT_EDITORIAL_PRODUCTS = [
+      {
+        id: "ref-1",
+        name: "Топ из хлопка и шелка",
+        category: "Женские",
+        price: 4800,
+        size: "XS, S, M, L",
+        colors: ["Молочный", "Бежевый", "Шоколадный"],
+        colorHex: ["#F6F4EE", "#D8CEBE", "#423229"],
+        image_url: "/assets/images/model_woman_silk_1793647260509.jpg",
+        gallery: [
+          "/assets/images/model_woman_silk_1793647260509.jpg"
+        ],
+        composition: "70% тончайший хлопок, 30% натуральный шелк малбери.",
+        fit: "Прямой свободный крой. На модели размер S (рост 175 см)."
+      },
+      {
+        id: "ref-2",
+        name: "Светло-серая рубашка oversize",
+        category: "Мужские",
+        price: 3600,
+        size: "S, M, L, XL",
+        colors: ["Светло-серый", "Графитовый", "Оливковый"],
+        colorHex: ["#DCDCDA", "#2F3131", "#555D50"],
+        image_url: "/assets/images/model_man_oversize_1793647261528.jpg",
+        gallery: [
+          "/assets/images/model_man_oversize_1793647261528.jpg"
+        ],
+        composition: "100% умягченный хлопок плотного плетения.",
+        fit: "Свободная посадка со спущенной линией плеча. На модели размер L (рост 186 см)."
+      },
+      {
+        id: "ref-3",
+        name: "Брюки палаццо из льна",
+        category: "Женские",
+        price: 5400,
+        size: "XS, S, M",
+        colors: ["Песочный", "Белоснежный", "Черный"],
+        colorHex: ["#D4C8B5", "#FAF9F6", "#1A1A1A"],
+        image_url: "/assets/images/model_woman_palazzo_1793647262228.jpg",
+        gallery: [
+          "/assets/images/model_woman_palazzo_1793647262228.jpg"
+        ],
+        composition: "100% лен European Flax высшей категории.",
+        fit: "Высокая посадка, свободный летящий силуэт. На модели размер S."
+      },
+      {
+        id: "ref-4",
+        name: "Кашемировый джемпер Basic",
+        category: "Унисекс",
+        price: 8900,
+        size: "S, M, L",
+        colors: ["Капучино", "Серый меланж", "Сливочный"],
+        colorHex: ["#997D6E", "#A8A8A8", "#F5EFE6"],
+        image_url: "/assets/images/model_cashmere_knit_1793647262181.jpg",
+        gallery: [
+          "/assets/images/model_cashmere_knit_1793647262181.jpg"
+        ],
+        composition: "100% монгольский гребенной кашемир.",
+        fit: "Классический регулярный крой, универсальная длина. На модели размер M."
+      }
+    ];
+
+    let allCatalogItems = [];
+    let activeCategory = "Все";
+    let currentQuickViewItem = null;
+    let selectedSize = "";
+    let selectedColor = "";
+
+    // Запуск при загрузке
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchCatalog();
+
+      // Закрытие модального окна по Escape
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeQuickViewDirect();
+      });
+    });
+
+    // -------------------------------------------------------------
+    // ЗАГРУЗКА ТОВАРОВ ИЗ SUPABASE
+    // -------------------------------------------------------------
+    async function fetchCatalog() {
+      const loader = document.getElementById("catalogLoader");
+      loader.classList.remove("hidden");
+
+      try {
+        const { data, error } = await supabaseClient
+          .from(TABLE_NAME)
+          .select("*")
+          .order('id', { ascending: false });
+
+        if (error) {
+          console.warn("Supabase query warning:", error);
+        }
+
+        const supabaseItems = (data || []).map(item => normalizeProduct(item));
+
+        // Объединяем реальные товары из админки со стартовой капсулой
+        if (supabaseItems.length > 0) {
+          allCatalogItems = [...supabaseItems, ...DEFAULT_EDITORIAL_PRODUCTS];
+        } else {
+          allCatalogItems = DEFAULT_EDITORIAL_PRODUCTS;
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        allCatalogItems = DEFAULT_EDITORIAL_PRODUCTS;
+      } finally {
+        loader.classList.add("hidden");
+        renderCatalog();
+      }
+    }
+
+    function extractImages(raw) {
+      let list = [];
+      if (Array.isArray(raw.gallery) && raw.gallery.length > 0) {
+        list = raw.gallery;
+      } else if (Array.isArray(raw.images) && raw.images.length > 0) {
+        list = raw.images;
+      } else if (typeof raw.gallery === 'string' && raw.gallery.trim().startsWith('[')) {
+        try { list = JSON.parse(raw.gallery); } catch(e){}
+      } else if (typeof raw.images === 'string' && raw.images.trim().startsWith('[')) {
+        try { list = JSON.parse(raw.images); } catch(e){}
+      }
+      
+      if (!list || list.length === 0) {
+        const combinedStr = raw.image_url || raw.photo_url || raw.image || "";
+        if (combinedStr) {
+          list = combinedStr.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+
+      if (!list || list.length === 0) {
+        list = [DEFAULT_EDITORIAL_PRODUCTS[0].image_url];
+      }
+
+      return list.slice(0, 5);
+    }
+
+    function normalizeProduct(raw) {
+      const defaultColors = ["Молочный", "Графит", "Песочный"];
+      const defaultHex = ["#F4F1EA", "#323232", "#D4C8B5"];
+      const photos = extractImages(raw);
+
+      return {
+        id: raw.id,
+        name: raw.name || raw.title || "Дизайнерское изделие",
+        category: raw.category || "Унисекс",
+        price: raw.price ? Number(raw.price) : 3500,
+        size: raw.size || raw.volume || "XS, S, M, L",
+        colors: raw.colors || defaultColors,
+        colorHex: raw.colorHex || defaultHex,
+        image_url: photos[0],
+        gallery: photos,
+        composition: raw.composition || "100% натуральные премиальные волокна.",
+        fit: raw.fit || "Идеальная базовая посадка. Комфортный силуэт."
+      };
+    }
+
+    // -------------------------------------------------------------
+    // ОТРИСОВКА КАРТОЧЕК ВИТРИНЫ
+    // -------------------------------------------------------------
+    function renderCatalog() {
+      const grid = document.getElementById("productsGrid");
+      const emptyState = document.getElementById("catalogEmpty");
+
+      const filtered = activeCategory === "Все"
+        ? allCatalogItems
+        : allCatalogItems.filter(item => (item.category || "").toLowerCase() === activeCategory.toLowerCase());
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+
+      grid.innerHTML = filtered.map(item => {
+        const sizesList = (item.size || "S, M, L").split(',').map(s => s.trim());
+        const colorsList = item.colors || ["Натуральный"];
+        const hexList = item.colorHex || ["#D4C8B5", "#2F3131"];
+        const formattedPrice = Number(item.price).toLocaleString("ru-RU");
+        const photosCount = (item.gallery && item.gallery.length) || 1;
+
+        return `
+          <article class="group flex flex-col justify-between bg-transparent transition duration-300">
+            
+            <!-- Вертикальное фото 4:5 с мягким зумом -->
+            <div 
+              class="relative aspect-fashion w-full rounded-2xl bg-[#EFECE6] overflow-hidden cursor-pointer shadow-xs"
+              onclick="openQuickView('${item.id}')"
+            >
+              <img 
+                src="${escapeHtml(item.image_url)}" 
+                alt="${escapeHtml(item.name)}" 
+                loading="lazy"
+                class="w-full h-full object-cover object-top img-zoom"
+                onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';"
+              />
+
+              <!-- Бейдж категории -->
+              <span class="absolute top-2.5 left-2.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/90 text-charcoal backdrop-blur-md shadow-xs">
+                ${escapeHtml(item.category)}
+              </span>
+
+              <!-- Бейдж количества фото (если больше одного) -->
+              ${photosCount > 1 ? `
+                <span class="absolute bottom-2.5 right-2.5 text-[9px] sm:text-[10px] font-mono tracking-wider px-2 py-0.5 rounded-full bg-charcoal/75 text-white backdrop-blur-md shadow-xs flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>${photosCount} фото</span>
+                </span>
+              ` : ''}
+
+              <!-- Быстрый просмотр плашка при наведении (десктоп) -->
+              <div class="hidden sm:flex absolute inset-x-3 bottom-3 py-2.5 px-3 bg-white/95 backdrop-blur-md rounded-xl text-center items-center justify-center text-[11px] font-medium uppercase tracking-wider text-charcoal opacity-0 group-hover:opacity-100 transition duration-300 shadow-sm">
+                Быстрый просмотр (до 5 фото)
+              </div>
+            </div>
+
+            <!-- Информация о товаре -->
+            <div class="pt-3 pb-1 flex flex-col flex-1 justify-between space-y-2">
+              
+              <div>
+                <!-- Точки доступных цветов -->
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  ${hexList.slice(0, 4).map(hex => `
+                    <span class="w-2.5 h-2.5 rounded-full border border-neutral-300/80 shadow-2xs" style="background-color: ${hex}"></span>
+                  `).join('')}
+                  ${colorsList.length > 4 ? `<span class="text-[9px] text-neutral-400 font-mono">+${colorsList.length - 4}</span>` : ''}
+                </div>
+
+                <!-- Название изделия -->
+                <h3 
+                  onclick="openQuickView('${item.id}')"
+                  class="font-medium text-xs sm:text-sm text-charcoal tracking-tight line-clamp-1 hover:text-neutral-500 cursor-pointer transition"
+                  title="${escapeHtml(item.name)}"
+                >
+                  ${escapeHtml(item.name)}
+                </h3>
+
+                <!-- Размеры в виде аккуратных микро-бейджей -->
+                <div class="flex flex-wrap items-center gap-1 mt-1.5">
+                  ${sizesList.slice(0, 4).map(s => `
+                    <span class="text-[10px] font-mono text-neutral-500 bg-neutral-100/90 px-1.5 py-0.5 rounded">
+                      ${escapeHtml(s)}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Нижняя строка: Цена и кнопка заказа в WhatsApp -->
+              <div class="pt-2 border-t border-neutral-200/60 flex items-center justify-between gap-2">
+                <div>
+                  <span class="text-xs sm:text-sm font-bold text-charcoal tracking-tight">
+                    ${formattedPrice} сом
+                  </span>
+                </div>
+
+                <!-- Кнопка заказа в один клик -->
+                <button 
+                  onclick="quickOrderWhatsapp('${item.id}')" 
+                  class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-[11px] font-semibold rounded-full transition active:scale-95 shadow-xs"
+                  title="Заказать в WhatsApp"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.634.076-1.895-.447-1.488-.616-2.433-2.12-2.507-2.22-.074-.099-.607-.808-.607-1.542s.385-1.094.522-1.242c.137-.148.3-.186.4-.186.1 0 .2.001.288.006.092.004.216-.035.337.257.126.301.428 1.042.466 1.118.038.077.063.167.013.268-.05.101-.076.164-.151.252-.075.088-.158.196-.226.264-.075.074-.154.155-.066.306.088.151.391.644.839 1.043.578.514 1.066.674 1.217.749.151.076.24.063.329-.038.089-.101.382-.444.483-.596.101-.152.202-.126.34-.076.139.051.879.414 1.03.49.151.076.252.114.29.177.038.064.038.368-.106.773z"/>
+                  </svg>
+                  <span class="hidden xs:inline">WhatsApp</span>
+                </button>
+              </div>
+
+            </div>
+
+          </article>
+        `;
+      }).join('');
+    }
+
+    // Фильтрация каталога
+    function filterCatalog(category) {
+      activeCategory = category;
+      document.querySelectorAll('.cat-tab').forEach(btn => {
+        if (btn.getAttribute('data-filter') === category) {
+          btn.className = "cat-tab active px-4 py-2 rounded-full font-medium transition bg-charcoal text-white tracking-wide";
+        } else {
+          btn.className = "cat-tab px-4 py-2 rounded-full font-medium transition bg-white text-neutral-600 border border-neutral-200 hover:border-black tracking-wide";
+        }
+      });
+      renderCatalog();
+    }
+
+    // -------------------------------------------------------------
+    // МОДАЛЬНОЕ ОКНО QUICK VIEW (БЫСТРЫЙ ПРОСМОТР - ДО 5 ФОТО)
+    // -------------------------------------------------------------
+    let currentQvPhotoIndex = 0;
+    let currentQvGallery = [];
+
+    function openQuickView(productId) {
+      const item = allCatalogItems.find(p => String(p.id) === String(productId));
+      if (!item) return;
+
+      currentQuickViewItem = item;
+      currentQvGallery = (item.gallery && item.gallery.length > 0) ? item.gallery.slice(0, 5) : [item.image_url];
+      currentQvPhotoIndex = 0;
+
+      // Установка начальных выбранных размера и цвета
+      const sizes = (item.size || "S, M, L").split(',').map(s => s.trim());
+      selectedSize = sizes[0] || "Уточнить";
+
+      const colors = item.colors || ["Натуральный"];
+      selectedColor = colors[0] || "Натуральный";
+
+      document.getElementById("qvTitle").textContent = item.name;
+      document.getElementById("qvCategoryBadge").textContent = item.category || "Изделие";
+      document.getElementById("qvArticle").textContent = `Арт. SD-${String(item.id).substring(0, 6)}`;
+      document.getElementById("qvPrice").textContent = `${Number(item.price).toLocaleString("ru-RU")} сом`;
+      document.getElementById("qvComposition").innerHTML = `<strong class="font-semibold text-charcoal">Состав:</strong> ${escapeHtml(item.composition)}`;
+      document.getElementById("qvFit").innerHTML = `<strong class="font-semibold text-charcoal">Посадка:</strong> ${escapeHtml(item.fit)}`;
+      document.getElementById("qvSelectedColorName").textContent = selectedColor;
+
+      const uploadStatus = document.getElementById("qvUploadStatus");
+      if (uploadStatus) {
+        uploadStatus.classList.add("hidden");
+        uploadStatus.textContent = "";
+      }
+
+      renderQvGallery();
+
+      // Цвета
+      const colorContainer = document.getElementById("qvColorOptions");
+      const hexList = item.colorHex || ["#D4C8B5", "#2F3131", "#FAF9F6"];
+      colorContainer.innerHTML = colors.map((col, idx) => {
+        const hex = hexList[idx] || "#C8C4BD";
+        const isSelected = col === selectedColor;
+        return `
+          <button 
+            type="button" 
+            onclick="selectQvColor('${escapeHtml(col)}', this)"
+            title="${escapeHtml(col)}"
+            class="w-6 h-6 rounded-full border-2 ${isSelected ? 'ring-2 ring-charcoal ring-offset-2 border-transparent' : 'border-neutral-300'} transition cursor-pointer"
+            style="background-color: ${hex}"
+          ></button>
+        `;
+      }).join('');
+
+      // Размеры
+      const sizeContainer = document.getElementById("qvSizeOptions");
+      sizeContainer.innerHTML = sizes.map((s) => {
+        const isSelected = s === selectedSize;
+        return `
+          <button 
+            type="button" 
+            onclick="selectQvSize('${escapeHtml(s)}', this)"
+            class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium border ${
+              isSelected ? 'bg-charcoal text-white border-charcoal' : 'bg-white text-neutral-700 border-neutral-300 hover:border-black'
+            } transition cursor-pointer"
+          >
+            ${escapeHtml(s)}
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById("quickViewModal").classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+
+    function renderQvGallery() {
+      if (!currentQvGallery.length) return;
+      if (currentQvPhotoIndex >= currentQvGallery.length) currentQvPhotoIndex = 0;
+      if (currentQvPhotoIndex < 0) currentQvPhotoIndex = currentQvGallery.length - 1;
+
+      const activePhoto = currentQvGallery[currentQvPhotoIndex];
+      const mainImg = document.getElementById("qvMainImage");
+      mainImg.src = activePhoto;
+
+      const counter = document.getElementById("qvPhotoCounter");
+      if (counter) {
+        counter.textContent = `${currentQvPhotoIndex + 1} / ${currentQvGallery.length}`;
+      }
+
+      const prevBtn = document.getElementById("qvPrevBtn");
+      const nextBtn = document.getElementById("qvNextBtn");
+      if (prevBtn && nextBtn) {
+        if (currentQvGallery.length <= 1) {
+          prevBtn.classList.add("hidden");
+          nextBtn.classList.add("hidden");
+        } else {
+          prevBtn.classList.remove("hidden");
+          nextBtn.classList.remove("hidden");
+        }
+      }
+
+      // Миниатюры (до 5 шт)
+      const thumbContainer = document.getElementById("qvThumbnails");
+      thumbContainer.innerHTML = currentQvGallery.map((imgSrc, idx) => `
+        <button 
+          type="button"
+          onclick="setQvPhotoByIndex(${idx})" 
+          class="w-14 h-16 rounded-xl overflow-hidden border-2 ${idx === currentQvPhotoIndex ? 'border-charcoal ring-1 ring-charcoal' : 'border-transparent opacity-70 hover:opacity-100'} transition flex-shrink-0 cursor-pointer shadow-2xs"
+          title="Фото ${idx + 1}"
+        >
+          <img src="${escapeHtml(imgSrc)}" class="w-full h-full object-cover object-top" />
+        </button>
+      `).join('');
+    }
+
+    function setQvPhotoByIndex(idx) {
+      currentQvPhotoIndex = idx;
+      renderQvGallery();
+    }
+
+    function prevQvPhoto(event) {
+      if (event) event.stopPropagation();
+      if (currentQvGallery.length <= 1) return;
+      currentQvPhotoIndex = (currentQvPhotoIndex - 1 + currentQvGallery.length) % currentQvGallery.length;
+      renderQvGallery();
+    }
+
+    function nextQvPhoto(event) {
+      if (event) event.stopPropagation();
+      if (currentQvGallery.length <= 1) return;
+      currentQvPhotoIndex = (currentQvPhotoIndex + 1) % currentQvGallery.length;
+      renderQvGallery();
+    }
+
+    // Загрузка до 5 фото прямо в модальном окне быстрого просмотра
+    async function handleQvUploadPhotos(event) {
+      const files = Array.from(event.target.files || []).filter(f => f.type.startsWith("image/"));
+      if (!files.length) return;
+
+      const statusEl = document.getElementById("qvUploadStatus");
+      statusEl.classList.remove("hidden");
+      statusEl.className = "text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-medium";
+      statusEl.textContent = `Загружаем ${Math.min(files.length, 5)} фото в Supabase...`;
+
+      try {
+        const uploadFiles = files.slice(0, 5);
+        const uploadedUrls = [];
+
+        for (let i = 0; i < uploadFiles.length; i++) {
+          const file = uploadFiles[i];
+          statusEl.textContent = `Загрузка в Storage: фото ${i + 1} из ${uploadFiles.length}...`;
+          const rawExt = file.name.split('.').pop() || 'jpg';
+          const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const fileName = `${Date.now()}_qv_${i}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from("product-images")
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+          if (uploadError) throw new Error(uploadError.message);
+
+          const { data: pubData } = supabaseClient.storage
+            .from("product-images")
+            .getPublicUrl(fileName);
+
+          if (pubData && pubData.publicUrl) {
+            uploadedUrls.push(pubData.publicUrl);
+          }
+        }
+
+        if (!uploadedUrls.length) throw new Error("Не удалось получить ссылки на фото");
+
+        // Если это товар из базы данных Supabase, обновляем его запись
+        if (currentQuickViewItem && !String(currentQuickViewItem.id).startsWith("ref-")) {
+          statusEl.textContent = "Сохранение в базу товаров...";
+          const allPhotosStr = uploadedUrls.join(',');
+          
+          await supabaseClient
+            .from("products")
+            .update({
+              image_url: allPhotosStr,
+              gallery: uploadedUrls,
+              images: uploadedUrls
+            })
+            .eq('id', currentQuickViewItem.id);
+        }
+
+        // Обновляем локальные данные галереи
+        currentQvGallery = uploadedUrls;
+        currentQvPhotoIndex = 0;
+        if (currentQuickViewItem) {
+          currentQuickViewItem.gallery = uploadedUrls;
+          currentQuickViewItem.image_url = uploadedUrls[0];
+        }
+        renderQvGallery();
+        renderCatalog();
+
+        statusEl.textContent = `Успешно загружено ${uploadedUrls.length} фото!`;
+        setTimeout(() => {
+          statusEl.classList.add("hidden");
+        }, 4000);
+
+      } catch (err) {
+        console.error("Ошибка загрузки фото в Quick View:", err);
+        statusEl.textContent = "Ошибка при загрузке: " + err.message;
+        statusEl.className = "text-[11px] text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-200 font-medium";
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    function selectQvColor(colorName, btn) {
+      selectedColor = colorName;
+      document.getElementById("qvSelectedColorName").textContent = colorName;
+      document.querySelectorAll("#qvColorOptions button").forEach(b => {
+        b.className = b.className.replace(/ring-2 ring-charcoal ring-offset-2/g, "");
+      });
+      btn.classList.add("ring-2", "ring-charcoal", "ring-offset-2");
+    }
+
+    function selectQvSize(sizeName, btn) {
+      selectedSize = sizeName;
+      document.querySelectorAll("#qvSizeOptions button").forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-mono font-medium border bg-white text-neutral-700 border-neutral-300 hover:border-black transition cursor-pointer";
+      });
+      btn.className = "px-3 py-1.5 rounded-lg text-xs font-mono font-medium border bg-charcoal text-white border-charcoal transition cursor-pointer";
+    }
+
+    function closeQuickView(event) {
+      if (event.target.id === "quickViewModal") {
+        closeQuickViewDirect();
+      }
+    }
+
+    function closeQuickViewDirect() {
+      document.getElementById("quickViewModal").classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+      currentQuickViewItem = null;
+    }
+
+    // -------------------------------------------------------------
+    // ЛОГИКА ЗАКАЗА В WHATSAPP С ПРЕДЗАПОЛНЕННЫМ ТЕКСТОМ
+    // -------------------------------------------------------------
+    function orderCurrentProductInWhatsapp() {
+      if (!currentQuickViewItem) return;
+      generateWhatsappUrlAndOpen(currentQuickViewItem, selectedSize, selectedColor);
+    }
+
+    function quickOrderWhatsapp(productId) {
+      const item = allCatalogItems.find(p => String(p.id) === String(productId));
+      if (!item) return;
+
+      const sizes = (item.size || "S, M, L").split(',').map(s => s.trim());
+      const defaultSize = sizes[0] || "Уточнить размер";
+      const defaultColor = (item.colors && item.colors[0]) || "Уточнить цвет";
+
+      generateWhatsappUrlAndOpen(item, defaultSize, defaultColor);
+    }
+
+    function generateWhatsappUrlAndOpen(item, size, color) {
+      const priceText = Number(item.price).toLocaleString("ru-RU");
+      
+      // Сформированное сообщение по точному шаблону:
+      // "Здравствуйте! Хочу заказать у вас: [Название товара], размер [Выбранный размер], цвет [Цвет], цена [Цена] сом."
+      const message = `Здравствуйте! Хочу заказать у вас: ${item.name}, размер ${size}, цвет ${color}, цена ${priceText} сом.`;
+
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedMessage}`;
+
+      window.open(whatsappUrl, "_blank");
+    }
+
+    function escapeHtml(text) {
+      if (typeof text !== 'string') return text ?? '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+
+</body>
+</html>

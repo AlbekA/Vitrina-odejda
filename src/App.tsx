@@ -35,6 +35,8 @@ interface Product {
   price?: number;
   size?: string;
   volume?: string;
+  color?: string;
+  colors?: string[] | string;
   image_url?: string;
   photo_url?: string;
   image?: string;
@@ -57,6 +59,7 @@ export default function App() {
   const [category, setCategory] = useState('Унисекс');
   const [price, setPrice] = useState('');
   const [size, setSize] = useState('');
+  const [color, setColor] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -167,8 +170,8 @@ export default function App() {
     }
 
     const priceNum = parseFloat(price);
-    if (!name.trim() || isNaN(priceNum) || !size.trim()) {
-      showNotification('Заполните все обязательные поля корректно', 'error');
+    if (!name.trim() || isNaN(priceNum) || !size.trim() || !color.trim()) {
+      showNotification('Заполните все обязательные поля (включая цвет)', 'error');
       return;
     }
 
@@ -201,11 +204,14 @@ export default function App() {
 
       setStatusMessage('2/2: Сохраняем товар в базу данных...');
 
+      const colorsArr = color.trim().split(',').map(c => c.trim()).filter(Boolean);
       const payload = {
         name: name.trim(),
         category,
         price: priceNum,
         size: size.trim(),
+        color: color.trim(),
+        colors: colorsArr,
         image_url: publicUrl
       };
 
@@ -213,17 +219,29 @@ export default function App() {
         .from(TABLE_NAME)
         .insert([payload]);
 
-      // Fallback if column is named "volume" instead of "size"
-      if (insertError && insertError.message.includes('column "size"')) {
-        const fallback = {
+      // Fallback if schema doesn't have color or size
+      if (insertError) {
+        const fallbackSimple = {
           name: name.trim(),
           category,
           price: priceNum,
-          volume: size.trim(),
+          size: size.trim(),
           image_url: publicUrl
         };
-        const retry = await supabase.from(TABLE_NAME).insert([fallback]);
-        insertError = retry.error;
+        const retry1 = await supabase.from(TABLE_NAME).insert([fallbackSimple]);
+        if (retry1.error && retry1.error.message.includes('column "size"')) {
+          const fallbackVolume = {
+            name: name.trim(),
+            category,
+            price: priceNum,
+            volume: size.trim(),
+            image_url: publicUrl
+          };
+          const retry2 = await supabase.from(TABLE_NAME).insert([fallbackVolume]);
+          insertError = retry2.error;
+        } else {
+          insertError = retry1.error;
+        }
       }
 
       if (insertError) {
@@ -234,6 +252,7 @@ export default function App() {
       setName('');
       setPrice('');
       setSize('');
+      setColor('');
       clearFile();
       await loadProducts();
 
@@ -520,8 +539,8 @@ export default function App() {
               />
             </div>
 
-            {/* Сетка: Категория, Цена, Объем/Размер */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Сетка: Категория, Цена, Размеры, Цвет */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                   Категория <span className="text-rose-500">*</span>
@@ -543,32 +562,46 @@ export default function App() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Цена <span className="text-rose-500">*</span>
+                  Цена (сом) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="2500"
+                    placeholder="3500"
                     min="0"
                     step="any"
                     required
-                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pl-8"
+                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pr-14"
                   />
-                  <span className="absolute left-3 top-2.5 text-sm font-semibold text-slate-400">₽</span>
+                  <span className="absolute right-3.5 top-2.5 text-xs font-bold text-slate-500 uppercase">сом</span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Объем / размер <span className="text-rose-500">*</span>
+                  Размеры <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={size}
                   onChange={(e) => setSize(e.target.value)}
-                  placeholder="Например: 50 мл или M"
+                  placeholder="Например: XS, S, M, L"
+                  required
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  Цвет(а) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  placeholder="Например: Молочный, Графит"
                   required
                   className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
                 />
@@ -676,19 +709,24 @@ export default function App() {
                         <h4 className="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-emerald-700 transition" title={title}>
                           {title}
                         </h4>
-                        {sizeOrVolume && (
-                          <div className="mt-1">
+                        <div className="mt-1 flex flex-wrap gap-1 items-center">
+                          {sizeOrVolume && (
                             <span className="inline-flex items-center text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded">
                               {sizeOrVolume}
                             </span>
-                          </div>
-                        )}
+                          )}
+                          {(p.color || (Array.isArray(p.colors) && p.colors.length > 0)) && (
+                            <span className="inline-flex items-center text-xs text-slate-600 font-medium bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded">
+                              Цвет: {p.color || (Array.isArray(p.colors) ? p.colors.join(', ') : p.colors)}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <span className="text-xs text-slate-400 block font-normal">Цена</span>
-                          <span className="text-base font-extrabold text-slate-900">{formattedPrice} ₽</span>
+                          <span className="text-base font-extrabold text-slate-900">{formattedPrice} сом</span>
                         </div>
 
                         <button

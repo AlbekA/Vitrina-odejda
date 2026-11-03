@@ -121,6 +121,18 @@
             </svg>
           </button>
 
+          <!-- Ссылка на витрину -->
+          <a 
+            href="/" 
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl border border-slate-200 transition"
+            title="Перейти в магазин"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="hidden sm:inline">К витрине</span>
+          </a>
+
           <!-- Выход -->
           <button 
             onclick="handleLogout()" 
@@ -153,67 +165,66 @@
 
         <form id="addProductForm" onsubmit="handleProductSubmit(event)" class="p-5 sm:p-6 space-y-5">
 
-          <!-- Загрузка изображения -->
+          <!-- Загрузка изображений (до 5 штук) -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-              Фотография товара <span class="text-rose-500">*</span>
-            </label>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                Фотографии товара <span class="text-rose-500">*</span>
+              </label>
+              <span id="photoCountBadge" class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                До 5 фотографий
+              </span>
+            </div>
             
             <div 
               id="dropzone"
-              class="relative border-2 border-dashed border-slate-200 hover:border-emerald-400 bg-slate-50/70 hover:bg-emerald-50/30 rounded-xl p-4 sm:p-6 text-center cursor-pointer transition flex flex-col items-center justify-center group"
+              class="relative border-2 border-dashed border-slate-200 hover:border-emerald-400 bg-slate-50/70 hover:bg-emerald-50/30 rounded-xl p-4 sm:p-5 text-center cursor-pointer transition flex flex-col items-center justify-center group"
               onclick="document.getElementById('imageFileInput').click()"
             >
               <input 
                 type="file" 
                 id="imageFileInput" 
                 accept="image/*" 
+                multiple
                 class="hidden" 
                 onchange="handleImageSelection(event)"
               />
 
               <!-- Заглушка, когда файл не выбран -->
-              <div id="dropzoneEmpty" class="space-y-2">
+              <div id="dropzoneEmpty" class="space-y-2 py-2">
                 <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-emerald-600 flex items-center justify-center shadow-xs transition">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div class="text-sm font-medium text-slate-700">
-                  <span class="text-emerald-600 font-semibold underline underline-offset-2">Выберите фото</span> или перетащите сюда
+                  <span class="text-emerald-600 font-semibold underline underline-offset-2">Выберите до 5 фото</span> или перетащите их сюда
                 </div>
-                <p class="text-[11px] text-slate-400">Форматы: JPG, PNG, WEBP. Корзина: <span class="font-mono text-slate-500">product-images</span></p>
+                <p class="text-[11px] text-slate-400">Первое фото будет главным на витрине. Все фото будут доступны в быстром просмотре.</p>
               </div>
 
-              <!-- Превью выбранного фото -->
-              <div id="dropzonePreview" class="hidden flex flex-col sm:flex-row items-center gap-4 w-full">
-                <img 
-                  id="previewImg" 
-                  src="" 
-                  alt="Предпросмотр" 
-                  class="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-slate-200 shadow-sm"
-                />
-                <div class="text-left flex-1 min-w-0">
-                  <p id="previewFileName" class="text-sm font-semibold text-slate-800 truncate">photo.jpg</p>
-                  <p id="previewFileSize" class="text-xs text-slate-400 mt-0.5">0 KB</p>
-                  <div class="mt-2 flex gap-2">
-                    <button 
-                      type="button" 
-                      onclick="event.stopPropagation(); document.getElementById('imageFileInput').click();"
-                      class="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
-                    >
-                      Заменить фото
-                    </button>
-                    <button 
-                      type="button" 
-                      onclick="event.stopPropagation(); clearSelectedImage();"
-                      class="px-2.5 py-1 text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition"
-                    >
-                      Удалить
-                    </button>
-                  </div>
+              <!-- Превью выбранных фото (сетка до 5 фото) -->
+              <div id="dropzonePreview" class="hidden w-full space-y-3" onclick="event.stopPropagation()">
+                <div id="thumbnailsGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 w-full"></div>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                  <button 
+                    type="button" 
+                    id="addMorePhotosBtn"
+                    onclick="document.getElementById('imageFileInput').click()"
+                    class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>+ Добавить еще фото</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick="clearSelectedImages()"
+                    class="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-800 transition cursor-pointer"
+                  >
+                    Очистить все
+                  </button>
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -225,14 +236,14 @@
             <input 
               type="text" 
               id="productName" 
-              placeholder="Например: Парфюм Velvet Amber или Футболка Oversize" 
+              placeholder="Например: Шерстяное пальто оверсайз или Шелковая рубашка" 
               required
               class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
             />
           </div>
 
-          <!-- Сетка: Категория, Цена, Объем/Размер -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Сетка: Категория, Цена, Размеры, Цвет -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             <!-- Категория -->
             <div>
@@ -257,34 +268,48 @@
               </div>
             </div>
 
-            <!-- Цена -->
+            <!-- Цена в СОМ -->
             <div>
               <label for="productPrice" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Цена <span class="text-rose-500">*</span>
+                Цена (сом) <span class="text-rose-500">*</span>
               </label>
               <div class="relative">
                 <input 
                   type="number" 
                   id="productPrice" 
-                  placeholder="2500" 
+                  placeholder="3500" 
                   min="0"
                   step="any"
                   required
-                  class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pl-8"
+                  class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition pr-14"
                 />
-                <span class="absolute left-3 top-2.5 text-sm font-semibold text-slate-400">₽</span>
+                <span class="absolute right-3.5 top-2.5 text-xs font-bold text-slate-500 uppercase">сом</span>
               </div>
             </div>
 
             <!-- Объем / размер -->
             <div>
               <label for="productSize" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Объем / размер <span class="text-rose-500">*</span>
+                Размеры <span class="text-rose-500">*</span>
               </label>
               <input 
                 type="text" 
                 id="productSize" 
-                placeholder="Например: 50 мл или M" 
+                placeholder="Например: XS, S, M, L" 
+                required
+                class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+              />
+            </div>
+
+            <!-- Выбор цвета -->
+            <div>
+              <label for="productColor" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Цвет(а) <span class="text-rose-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="productColor" 
+                placeholder="Например: Молочный, Графит" 
                 required
                 class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
               />
@@ -389,6 +414,64 @@
     </div>
   </div>
 
+  <!-- ==================== МОДАЛКА БЫСТРОГО ПРОСМОТРА И ЗАГРУЗКИ ДО 5 ФОТО ==================== -->
+  <div id="adminQuickViewModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto" onclick="closeAdminQuickView(event)">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-7 border border-slate-200 shadow-2xl relative fade-in" onclick="event.stopPropagation()">
+      
+      <button 
+        onclick="closeAdminQuickViewDirect()" 
+        class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition cursor-pointer"
+        title="Закрыть"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+          Быстрый просмотр
+        </span>
+        <span id="aqvCategory" class="text-xs text-slate-500 font-medium"></span>
+      </div>
+
+      <h3 id="aqvTitle" class="text-lg font-bold text-slate-900 leading-snug"></h3>
+      <p id="aqvPriceAndSize" class="text-sm font-semibold text-emerald-700 mt-0.5 mb-4"></p>
+
+      <!-- Галерея фото изделия (до 5 шт) -->
+      <div class="space-y-3">
+        <div class="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+          <img id="aqvMainImage" src="" alt="" class="w-full h-full object-cover" />
+          <span id="aqvPhotoCounter" class="absolute bottom-2.5 right-2.5 px-2.5 py-0.5 rounded-md bg-black/60 text-white text-[11px] font-mono tracking-wider backdrop-blur-xs">
+            1 / 1
+          </span>
+        </div>
+
+        <!-- Миниатюры всех фото (до 5) -->
+        <div id="aqvThumbnails" class="flex gap-2 overflow-x-auto pb-1"></div>
+
+        <!-- Блок загрузки новых фото (до 5) -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-bold text-slate-700 block">Управление фотографиями</span>
+            <span class="text-[11px] text-slate-400">Загрузите до 5 фото для этого товара</span>
+          </div>
+
+          <label class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition cursor-pointer active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Загрузить фото (до 5)</span>
+            <input type="file" id="aqvFileInput" accept="image/*" multiple class="hidden" onchange="handleAqvUpload(event)" />
+          </label>
+        </div>
+
+        <p id="aqvStatusText" class="hidden text-xs text-center py-2 px-3 rounded-xl font-medium"></p>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ==================== ЛОГИКА (JAVASCRIPT) ==================== -->
   <script>
     const SUPABASE_URL = "https://vhpsergcgxohylyaspbf.supabase.co";
@@ -403,7 +486,7 @@
     let allProducts = [];
     let currentFilter = 'Все';
     let productToDeleteId = null;
-    let selectedImageFile = null;
+    let selectedImageFiles = []; // Массив до 5 файлов фотографий
 
     document.addEventListener("DOMContentLoaded", () => {
       const isAuth = sessionStorage.getItem("admin_authenticated");
@@ -446,41 +529,117 @@
       document.getElementById("authError").classList.add("hidden");
     }
 
+    // -------------------------------------------------------------
+    // ПРЕДПРОСМОТР И ВЫБОР ДО 5 ИЗОБРАЖЕНИЙ
+    // -------------------------------------------------------------
     function handleImageSelection(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+      const inputFiles = Array.from(event.target.files || []);
+      if (!inputFiles.length) return;
 
-      if (!file.type.startsWith("image/")) {
-        showToast("Пожалуйста, выберите файл изображения (JPG, PNG, WEBP)", "error");
+      const validFiles = inputFiles.filter(f => f.type.startsWith("image/"));
+      if (!validFiles.length) {
+        showToast("Пожалуйста, выбирайте только файлы изображений (JPG, PNG, WEBP)", "error");
         return;
       }
 
-      selectedImageFile = file;
+      // Добавляем к текущим, но не более 5
+      const totalCount = selectedImageFiles.length + validFiles.length;
+      if (totalCount > 5) {
+        showToast("Максимально можно загрузить до 5 фотографий товара", "error");
+      }
 
-      const previewImg = document.getElementById("previewImg");
-      const previewFileName = document.getElementById("previewFileName");
-      const previewFileSize = document.getElementById("previewFileSize");
-
-      previewFileName.textContent = file.name;
-      previewFileSize.textContent = (file.size / 1024).toFixed(1) + " KB";
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        previewImg.src = e.target.result;
-        document.getElementById("dropzoneEmpty").classList.add("hidden");
-        document.getElementById("dropzonePreview").classList.remove("hidden");
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearSelectedImage() {
-      selectedImageFile = null;
+      selectedImageFiles = [...selectedImageFiles, ...validFiles].slice(0, 5);
+      renderSelectedThumbnails();
+      // Сбрасываем значение input, чтобы можно было выбрать те же файлы при необходимости
       document.getElementById("imageFileInput").value = "";
-      document.getElementById("previewImg").src = "";
-      document.getElementById("dropzonePreview").classList.add("hidden");
-      document.getElementById("dropzoneEmpty").classList.remove("hidden");
     }
 
+    function renderSelectedThumbnails() {
+      const grid = document.getElementById("thumbnailsGrid");
+      const badge = document.getElementById("photoCountBadge");
+      const emptyBox = document.getElementById("dropzoneEmpty");
+      const previewBox = document.getElementById("dropzonePreview");
+      const addMoreBtn = document.getElementById("addMorePhotosBtn");
+
+      if (selectedImageFiles.length === 0) {
+        emptyBox.classList.remove("hidden");
+        previewBox.classList.add("hidden");
+        badge.textContent = "До 5 фотографий";
+        badge.className = "text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md";
+        return;
+      }
+
+      emptyBox.classList.add("hidden");
+      previewBox.classList.remove("hidden");
+
+      badge.textContent = `Выбрано ${selectedImageFiles.length} из 5 фото`;
+      badge.className = "text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md";
+
+      // Скрываем кнопку добавления, если уже 5 фото
+      if (selectedImageFiles.length >= 5) {
+        addMoreBtn.classList.add("hidden");
+      } else {
+        addMoreBtn.classList.remove("hidden");
+      }
+
+      grid.innerHTML = selectedImageFiles.map((file, idx) => {
+        const tempUrl = URL.createObjectURL(file);
+        const isMain = idx === 0;
+
+        return `
+          <div class="relative group/thumb aspect-4/5 rounded-xl overflow-hidden border ${isMain ? 'border-emerald-500 ring-2 ring-emerald-400' : 'border-slate-200'} bg-slate-100 shadow-xs">
+            <img src="${tempUrl}" class="w-full h-full object-cover object-top" />
+            
+            ${isMain ? `
+              <span class="absolute top-1 left-1 bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shadow-xs">
+                Главное
+              </span>
+            ` : `
+              <button 
+                type="button" 
+                onclick="makePhotoPrimary(${idx})" 
+                title="Сделать главным фото"
+                class="absolute bottom-1 inset-x-1 py-1 bg-black/75 hover:bg-black text-white text-[9px] font-medium rounded opacity-0 group-hover/thumb:opacity-100 transition"
+              >
+                Главным
+              </button>
+            `}
+
+            <!-- Кнопка удаления отдельного фото -->
+            <button 
+              type="button" 
+              onclick="removeSelectedPhoto(${idx})"
+              class="absolute top-1 right-1 w-5 h-5 bg-rose-600/90 hover:bg-rose-700 text-white rounded-full flex items-center justify-center transition shadow-xs cursor-pointer"
+              title="Удалить фото"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function makePhotoPrimary(index) {
+      if (index <= 0 || index >= selectedImageFiles.length) return;
+      const target = selectedImageFiles.splice(index, 1)[0];
+      selectedImageFiles.unshift(target);
+      renderSelectedThumbnails();
+    }
+
+    function removeSelectedPhoto(index) {
+      selectedImageFiles.splice(index, 1);
+      renderSelectedThumbnails();
+    }
+
+    function clearSelectedImages() {
+      selectedImageFiles = [];
+      document.getElementById("imageFileInput").value = "";
+      renderSelectedThumbnails();
+    }
+
+    // Drag and Drop поддержка
     const dropzone = document.getElementById("dropzone");
     if (dropzone) {
       ['dragenter', 'dragover'].forEach(eventName => {
@@ -507,11 +666,14 @@
       }, false);
     }
 
+    // -------------------------------------------------------------
+    // ЗАГРУЗКА И ПУБЛИКАЦИЯ ТОВАРА В SUPABASE
+    // -------------------------------------------------------------
     async function handleProductSubmit(event) {
       event.preventDefault();
 
-      if (!selectedImageFile) {
-        showToast("Пожалуйста, прикрепите фотографию товара", "error");
+      if (selectedImageFiles.length === 0) {
+        showToast("Пожалуйста, прикрепите хотя бы одну фотографию товара (до 5 шт.)", "error");
         return;
       }
 
@@ -519,9 +681,10 @@
       const category = document.getElementById("productCategory").value;
       const priceVal = parseFloat(document.getElementById("productPrice").value);
       const size = document.getElementById("productSize").value.trim();
+      const color = document.getElementById("productColor").value.trim();
 
-      if (!name || isNaN(priceVal) || !size) {
-        showToast("Пожалуйста, заполните все обязательные поля", "error");
+      if (!name || isNaN(priceVal) || !size || !color) {
+        showToast("Пожалуйста, заполните все обязательные поля (включая цвет)", "error");
         return;
       }
 
@@ -530,42 +693,60 @@
       const statusText = document.getElementById("uploadStatusText");
 
       submitBtn.disabled = true;
-      submitBtnText.textContent = "Загрузка фото в Storage...";
       statusText.classList.remove("hidden");
-      statusText.textContent = "1/2: Загружаем файл в корзину product-images...";
 
       try {
-        const rawExt = selectedImageFile.name.split('.').pop() || 'jpg';
-        const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
-        const filePath = uniqueFileName;
+        const uploadedUrls = [];
 
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-          .from(STORAGE_BUCKET)
-          .upload(filePath, selectedImageFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
+        // 1. Загрузка всех выбранных фото в Storage
+        for (let i = 0; i < selectedImageFiles.length; i++) {
+          const file = selectedImageFiles[i];
+          submitBtnText.textContent = `Загрузка фото (${i + 1}/${selectedImageFiles.length})...`;
+          statusText.textContent = `Загрузка в Storage: фото ${i + 1} из ${selectedImageFiles.length}...`;
 
-        if (uploadError) {
-          throw new Error("Ошибка загрузки в Storage: " + uploadError.message);
+          const rawExt = file.name.split('.').pop() || 'jpg';
+          const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const uniqueFileName = `${Date.now()}_${i}_${Math.random().toString(36).substring(2, 8)}.${cleanExt}`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .upload(uniqueFileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            throw new Error(`Ошибка загрузки фото ${i + 1}: ` + uploadError.message);
+          }
+
+          const { data: publicUrlData } = supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(uniqueFileName);
+
+          if (publicUrlData && publicUrlData.publicUrl) {
+            uploadedUrls.push(publicUrlData.publicUrl);
+          }
         }
 
-        const { data: publicUrlData } = supabaseClient.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(filePath);
-
-        const photoUrl = publicUrlData ? publicUrlData.publicUrl : '';
+        const mainPhotoUrl = uploadedUrls[0] || '';
+        // Сохраняем все фото через запятую для совместимости с текстовой колонкой image_url,
+        // а также передаем массив в gallery/images для продвинутых схем
+        const allPhotosString = uploadedUrls.join(',');
+        const colorsArray = color.split(',').map(c => c.trim()).filter(Boolean);
 
         submitBtnText.textContent = "Сохранение в базу данных...";
-        statusText.textContent = "2/2: Добавляем запись в таблицу products...";
+        statusText.textContent = "Сохраняем товар, размеры и цвет в таблицу products...";
 
         const newProductPayload = {
           name: name,
           category: category,
           price: priceVal,
           size: size,
-          image_url: photoUrl
+          color: color,
+          colors: colorsArray,
+          image_url: allPhotosString,
+          gallery: uploadedUrls,
+          images: uploadedUrls
         };
 
         let { data: insertedData, error: insertError } = await supabaseClient
@@ -573,35 +754,57 @@
           .insert([newProductPayload])
           .select();
 
-        if (insertError && insertError.message && insertError.message.includes("column \"size\"")) {
-          const fallbackPayload = {
+        // Поэтапный fallback при несоответствии опциональных колонок
+        if (insertError) {
+          const fallbackWithColor = {
             name: name,
             category: category,
             price: priceVal,
-            volume: size,
-            image_url: photoUrl
+            size: size,
+            color: color,
+            image_url: allPhotosString
           };
-          const retryRes = await supabaseClient
-            .from(TABLE_NAME)
-            .insert([fallbackPayload])
-            .select();
-          insertError = retryRes.error;
-          insertedData = retryRes.data;
+          let retryRes = await supabaseClient.from(TABLE_NAME).insert([fallbackWithColor]).select();
+          if (retryRes.error) {
+            const fallbackSimple = {
+              name: name,
+              category: category,
+              price: priceVal,
+              size: size,
+              image_url: allPhotosString
+            };
+            retryRes = await supabaseClient.from(TABLE_NAME).insert([fallbackSimple]).select();
+            if (retryRes.error && retryRes.error.message.includes('column "size"')) {
+              const fallbackVolume = {
+                name: name,
+                category: category,
+                price: priceVal,
+                volume: size,
+                image_url: allPhotosString
+              };
+              const retryRes2 = await supabaseClient.from(TABLE_NAME).insert([fallbackVolume]).select();
+              insertError = retryRes2.error;
+            } else {
+              insertError = retryRes.error;
+            }
+          } else {
+            insertError = null;
+          }
         }
 
         if (insertError) {
           throw new Error("Ошибка записи в базу: " + insertError.message);
         }
 
-        showToast("Товар успешно добавлен!", "success");
+        showToast(`Товар успешно добавлен с ${uploadedUrls.length} фото!`, "success");
 
         document.getElementById("addProductForm").reset();
-        clearSelectedImage();
+        clearSelectedImages();
 
         await loadProducts();
 
       } catch (err) {
-        console.error("Ошибка при добавлении товара:", err);
+        console.error("Ошибка при публикации товара:", err);
         showToast(err.message || "Не удалось опубликовать товар", "error");
       } finally {
         submitBtn.disabled = false;
@@ -640,6 +843,27 @@
       }
     }
 
+    function extractPhotosList(product) {
+      let list = [];
+      if (Array.isArray(product.gallery) && product.gallery.length > 0) {
+        list = product.gallery;
+      } else if (Array.isArray(product.images) && product.images.length > 0) {
+        list = product.images;
+      } else if (typeof product.gallery === 'string' && product.gallery.trim().startsWith('[')) {
+        try { list = JSON.parse(product.gallery); } catch(e){}
+      } else if (typeof product.images === 'string' && product.images.trim().startsWith('[')) {
+        try { list = JSON.parse(product.images); } catch(e){}
+      }
+
+      if (!list || list.length === 0) {
+        const raw = product.image_url || product.photo_url || product.image || "";
+        if (raw) {
+          list = raw.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      return (list || []).slice(0, 5);
+    }
+
     function renderProducts() {
       const grid = document.getElementById("productsGrid");
       const empty = document.getElementById("productsEmpty");
@@ -664,12 +888,20 @@
         const cat = product.category || "Унисекс";
         const price = product.price ? Number(product.price).toLocaleString("ru-RU") : "0";
         const sizeOrVolume = product.size || product.volume || "";
-        const imgUrl = product.image_url || product.photo_url || product.image || "";
+        const colorVal = product.color || (Array.isArray(product.colors) ? product.colors.join(', ') : "") || "";
+        const photoUrls = extractPhotosList(product);
+        const rawImg = product.image_url || product.photo_url || product.image || "";
+        const imgUrl = photoUrls[0] || (rawImg.includes(',') ? rawImg.split(',')[0].trim() : rawImg);
+        const photoCount = photoUrls.length || (rawImg.includes(',') ? rawImg.split(',').length : (rawImg ? 1 : 0));
         const id = product.id;
 
         return `
           <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col group fade-in">
-            <div class="relative aspect-4/3 bg-slate-100 overflow-hidden">
+            <div 
+              class="relative aspect-4/3 bg-slate-100 overflow-hidden cursor-pointer"
+              onclick="openAdminQuickView(${id})"
+              title="Нажмите для быстрого просмотра и добавления до 5 фото"
+            >
               ${imgUrl ? `
                 <img 
                   src="${escapeHtml(imgUrl)}" 
@@ -689,18 +921,43 @@
               <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[11px] font-semibold tracking-wide backdrop-blur-md shadow-xs ${getCategoryBadgeStyle(cat)}">
                 ${escapeHtml(cat)}
               </span>
+
+              ${photoCount > 0 ? `
+                <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-lg text-[10px] font-bold tracking-wider bg-black/60 text-white backdrop-blur-md shadow-xs flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  ${photoCount} фото
+                </span>
+              ` : ''}
+
+              <!-- Оверлей быстрого просмотра -->
+              <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <span class="px-3 py-1.5 bg-white/95 rounded-xl text-xs font-semibold text-slate-800 shadow-md">
+                  Быстрый просмотр / Фото
+                </span>
+              </div>
             </div>
 
             <div class="p-4 flex-1 flex flex-col justify-between">
               <div>
-                <h4 class="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-emerald-700 transition" title="${escapeHtml(title)}">
+                <h4 
+                  class="font-bold text-sm text-slate-800 line-clamp-1 group-hover:text-emerald-700 transition cursor-pointer" 
+                  title="${escapeHtml(title)}"
+                  onclick="openAdminQuickView(${id})"
+                >
                   ${escapeHtml(title)}
                 </h4>
                 
-                <div class="flex items-center gap-2 mt-1">
+                <div class="flex flex-wrap items-center gap-1.5 mt-1">
                   ${sizeOrVolume ? `
                     <span class="inline-flex items-center text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded">
                       ${escapeHtml(sizeOrVolume)}
+                    </span>
+                  ` : ''}
+                  ${colorVal ? `
+                    <span class="inline-flex items-center text-xs text-slate-500 font-medium bg-slate-100 px-2 py-0.5 rounded">
+                      Цвет: ${escapeHtml(colorVal)}
                     </span>
                   ` : ''}
                 </div>
@@ -709,25 +966,177 @@
               <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <div>
                   <span class="text-xs text-slate-400 block font-normal">Цена</span>
-                  <span class="text-base font-extrabold text-slate-900">${price} ₽</span>
+                  <span class="text-base font-extrabold text-slate-900">${price} сом</span>
                 </div>
 
-                <button 
-                  onclick="openDeleteModal(${id})" 
-                  class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 rounded-lg transition active:scale-95"
-                  title="Удалить товар"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span>Удалить</span>
-                </button>
+                <div class="flex items-center gap-1.5">
+                  <button 
+                    onclick="openAdminQuickView(${id})" 
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 rounded-lg transition active:scale-95 cursor-pointer"
+                    title="Быстрый просмотр и загрузка до 5 фото"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Фото</span>
+                  </button>
+
+                  <button 
+                    onclick="openDeleteModal(${id})" 
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 rounded-lg transition active:scale-95 cursor-pointer"
+                    title="Удалить товар"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Удалить</span>
+                  </button>
+                </div>
               </div>
 
             </div>
           </div>
         `;
       }).join("");
+    }
+
+    // -------------------------------------------------------------
+    // БЫСТРЫЙ ПРОСМОТР И ЗАГРУЗКА ДО 5 ФОТО ДЛЯ АДМИНА
+    // -------------------------------------------------------------
+    let currentAdminQvProduct = null;
+    let currentAdminQvPhotos = [];
+    let currentAdminQvIndex = 0;
+
+    function openAdminQuickView(productId) {
+      const prod = allProducts.find(p => String(p.id) === String(productId));
+      if (!prod) return;
+
+      currentAdminQvProduct = prod;
+      currentAdminQvPhotos = extractPhotosList(prod);
+      if (currentAdminQvPhotos.length === 0) {
+        currentAdminQvPhotos = [prod.image_url || 'https://placehold.co/400x300/f1f5f9/94a3b8?text=Нет+фото'];
+      }
+      currentAdminQvIndex = 0;
+
+      document.getElementById("aqvTitle").textContent = prod.name || prod.title || "Товар";
+      document.getElementById("aqvCategory").textContent = prod.category || "Унисекс";
+      const sizeVal = prod.size || prod.volume || "Без размера";
+      const colorVal = prod.color || (Array.isArray(prod.colors) ? prod.colors.join(', ') : "") || "";
+      const priceVal = prod.price ? Number(prod.price).toLocaleString("ru-RU") : "0";
+      document.getElementById("aqvPriceAndSize").textContent = `${priceVal} сом • Размеры: ${sizeVal}${colorVal ? ` • Цвет: ${colorVal}` : ''}`;
+
+      const statusEl = document.getElementById("aqvStatusText");
+      if (statusEl) {
+        statusEl.classList.add("hidden");
+        statusEl.textContent = "";
+      }
+
+      renderAdminQvGallery();
+      document.getElementById("adminQuickViewModal").classList.remove("hidden");
+    }
+
+    function renderAdminQvGallery() {
+      if (!currentAdminQvPhotos.length) return;
+      if (currentAdminQvIndex >= currentAdminQvPhotos.length) currentAdminQvIndex = 0;
+
+      const activePhoto = currentAdminQvPhotos[currentAdminQvIndex];
+      document.getElementById("aqvMainImage").src = activePhoto;
+      document.getElementById("aqvPhotoCounter").textContent = `${currentAdminQvIndex + 1} / ${currentAdminQvPhotos.length}`;
+
+      const thumbGrid = document.getElementById("aqvThumbnails");
+      thumbGrid.innerHTML = currentAdminQvPhotos.map((url, idx) => `
+        <button 
+          type="button" 
+          onclick="setAdminQvPhoto(${idx})"
+          class="w-14 h-14 rounded-xl overflow-hidden border-2 ${idx === currentAdminQvIndex ? 'border-emerald-500 ring-2 ring-emerald-300' : 'border-slate-200 opacity-70 hover:opacity-100'} transition flex-shrink-0 cursor-pointer shadow-xs"
+        >
+          <img src="${escapeHtml(url)}" class="w-full h-full object-cover" />
+        </button>
+      `).join('');
+    }
+
+    function setAdminQvPhoto(idx) {
+      currentAdminQvIndex = idx;
+      renderAdminQvGallery();
+    }
+
+    function closeAdminQuickView(event) {
+      if (event.target.id === "adminQuickViewModal") {
+        closeAdminQuickViewDirect();
+      }
+    }
+
+    function closeAdminQuickViewDirect() {
+      document.getElementById("adminQuickViewModal").classList.add("hidden");
+      currentAdminQvProduct = null;
+    }
+
+    async function handleAqvUpload(event) {
+      const files = Array.from(event.target.files || []).filter(f => f.type.startsWith("image/"));
+      if (!files.length || !currentAdminQvProduct) return;
+
+      const statusEl = document.getElementById("aqvStatusText");
+      statusEl.classList.remove("hidden");
+      statusEl.className = "text-xs text-center py-2 px-3 rounded-xl bg-emerald-50 text-emerald-800 font-medium border border-emerald-200";
+      statusEl.textContent = `Загружаем ${Math.min(files.length, 5)} фото в Storage...`;
+
+      try {
+        const uploadFiles = files.slice(0, 5);
+        const uploadedUrls = [];
+
+        for (let i = 0; i < uploadFiles.length; i++) {
+          const file = uploadFiles[i];
+          statusEl.textContent = `Загрузка в Storage: фото ${i + 1} из ${uploadFiles.length}...`;
+          const rawExt = file.name.split('.').pop() || 'jpg';
+          const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const fileName = `${Date.now()}_aqv_${i}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+          if (uploadError) throw new Error(uploadError.message);
+
+          const { data: pubData } = supabaseClient.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(fileName);
+
+          if (pubData && pubData.publicUrl) {
+            uploadedUrls.push(pubData.publicUrl);
+          }
+        }
+
+        const allPhotosStr = uploadedUrls.join(',');
+        statusEl.textContent = "Обновляем товар в базе...";
+
+        await supabaseClient
+          .from(TABLE_NAME)
+          .update({
+            image_url: allPhotosStr,
+            gallery: uploadedUrls,
+            images: uploadedUrls
+          })
+          .eq('id', currentAdminQvProduct.id);
+
+        currentAdminQvPhotos = uploadedUrls;
+        currentAdminQvIndex = 0;
+        currentAdminQvProduct.image_url = allPhotosStr;
+        currentAdminQvProduct.gallery = uploadedUrls;
+        currentAdminQvProduct.images = uploadedUrls;
+
+        renderAdminQvGallery();
+        renderProducts();
+
+        statusEl.textContent = `Успешно сохранено ${uploadedUrls.length} фото!`;
+        showToast(`Обновлено ${uploadedUrls.length} фото товара!`, "success");
+
+      } catch (err) {
+        console.error("Ошибка загрузки фото в Admin Quick View:", err);
+        statusEl.className = "text-xs text-center py-2 px-3 rounded-xl bg-rose-50 text-rose-700 font-medium border border-rose-200";
+        statusEl.textContent = "Ошибка при загрузке: " + err.message;
+      } finally {
+        event.target.value = "";
+      }
     }
 
     function getCategoryBadgeStyle(cat) {
