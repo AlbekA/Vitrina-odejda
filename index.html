@@ -338,19 +338,6 @@
 
           <!-- Дополнительные миниатюры для смены ракурса (до 5 шт) -->
           <div id="qvThumbnails" class="flex gap-2 overflow-x-auto pb-1"></div>
-
-          <!-- Блок быстрой загрузки фото (до 5 шт) прямо в модальном окне -->
-          <div class="pt-1 flex items-center justify-between border-t border-neutral-100">
-            <span class="text-[11px] text-neutral-400 font-light">Фотографии изделия (до 5)</span>
-            <label class="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-700 hover:text-black bg-neutral-100 hover:bg-neutral-200 px-2.5 py-1 rounded-lg transition cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>+ Загрузить фото</span>
-              <input type="file" id="qvUploadInput" accept="image/*" multiple class="hidden" onchange="handleQvUploadPhotos(event)" />
-            </label>
-          </div>
-          <p id="qvUploadStatus" class="hidden text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-medium"></p>
         </div>
 
         <!-- Описание и детали заказа -->
@@ -873,11 +860,7 @@
       document.getElementById("qvFit").innerHTML = `<strong class="font-semibold text-charcoal">Посадка:</strong> ${escapeHtml(item.fit)}`;
       document.getElementById("qvSelectedColorName").textContent = selectedColor;
 
-      const uploadStatus = document.getElementById("qvUploadStatus");
-      if (uploadStatus) {
-        uploadStatus.classList.add("hidden");
-        uploadStatus.textContent = "";
-      }
+
 
       renderQvGallery();
 
@@ -978,82 +961,6 @@
       renderQvGallery();
     }
 
-    // Загрузка до 5 фото прямо в модальном окне быстрого просмотра
-    async function handleQvUploadPhotos(event) {
-      const files = Array.from(event.target.files || []).filter(f => f.type.startsWith("image/"));
-      if (!files.length) return;
-
-      const statusEl = document.getElementById("qvUploadStatus");
-      statusEl.classList.remove("hidden");
-      statusEl.className = "text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-medium";
-      statusEl.textContent = `Загружаем ${Math.min(files.length, 5)} фото в Supabase...`;
-
-      try {
-        const uploadFiles = files.slice(0, 5);
-        const uploadedUrls = [];
-
-        for (let i = 0; i < uploadFiles.length; i++) {
-          const file = uploadFiles[i];
-          statusEl.textContent = `Загрузка в Storage: фото ${i + 1} из ${uploadFiles.length}...`;
-          const rawExt = file.name.split('.').pop() || 'jpg';
-          const cleanExt = rawExt.toLowerCase().replace(/[^a-z0-9]/g, '');
-          const fileName = `${Date.now()}_qv_${i}_${Math.random().toString(36).substring(2, 7)}.${cleanExt}`;
-
-          const { error: uploadError } = await supabaseClient.storage
-            .from("product-images")
-            .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-          if (uploadError) throw new Error(uploadError.message);
-
-          const { data: pubData } = supabaseClient.storage
-            .from("product-images")
-            .getPublicUrl(fileName);
-
-          if (pubData && pubData.publicUrl) {
-            uploadedUrls.push(pubData.publicUrl);
-          }
-        }
-
-        if (!uploadedUrls.length) throw new Error("Не удалось получить ссылки на фото");
-
-        // Если это товар из базы данных Supabase, обновляем его запись
-        if (currentQuickViewItem && !String(currentQuickViewItem.id).startsWith("ref-")) {
-          statusEl.textContent = "Сохранение в базу товаров...";
-          const allPhotosStr = uploadedUrls.join(',');
-          
-          await supabaseClient
-            .from("products")
-            .update({
-              image_url: allPhotosStr,
-              gallery: uploadedUrls,
-              images: uploadedUrls
-            })
-            .eq('id', currentQuickViewItem.id);
-        }
-
-        // Обновляем локальные данные галереи
-        currentQvGallery = uploadedUrls;
-        currentQvPhotoIndex = 0;
-        if (currentQuickViewItem) {
-          currentQuickViewItem.gallery = uploadedUrls;
-          currentQuickViewItem.image_url = uploadedUrls[0];
-        }
-        renderQvGallery();
-        renderCatalog();
-
-        statusEl.textContent = `Успешно загружено ${uploadedUrls.length} фото!`;
-        setTimeout(() => {
-          statusEl.classList.add("hidden");
-        }, 4000);
-
-      } catch (err) {
-        console.error("Ошибка загрузки фото в Quick View:", err);
-        statusEl.textContent = "Ошибка при загрузке: " + err.message;
-        statusEl.className = "text-[11px] text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-200 font-medium";
-      } finally {
-        event.target.value = "";
-      }
-    }
 
     function selectQvColor(colorName, btn) {
       selectedColor = colorName;
