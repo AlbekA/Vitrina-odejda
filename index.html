@@ -676,10 +676,78 @@
       return list.slice(0, 5);
     }
 
+    // Сопоставление названий цветов с эстетичными hex-оттенками
+    function getColorHex(colorName) {
+      if (!colorName) return "#B0A8A0";
+      const key = String(colorName).trim().toLowerCase();
+      const colorMap = {
+        'белый': '#FFFFFF',
+        'молочный': '#F6F4EE',
+        'сливочный': '#F5EFE6',
+        'черный': '#1A1A1A',
+        'чёрный': '#1A1A1A',
+        'серый': '#8A8A8A',
+        'светло-серый': '#DCDCDA',
+        'темно-серый': '#3B3B3B',
+        'тёмно-серый': '#3B3B3B',
+        'графит': '#323232',
+        'графитовый': '#2F3131',
+        'бежевый': '#D8CEBE',
+        'песочный': '#D4C8B5',
+        'кремовый': '#FDFBF7',
+        'коричневый': '#6B4423',
+        'шоколадный': '#423229',
+        'капучино': '#997D6E',
+        'хаки': '#6B705C',
+        'оливковый': '#555D50',
+        'зеленый': '#2D6A4F',
+        'зелёный': '#2D6A4F',
+        'синий': '#1D3557',
+        'голубой': '#A8DADC',
+        'красный': '#C92A2A',
+        'бордовый': '#7209B7',
+        'розовый': '#E5989B',
+        'пудровый': '#E8D0CC',
+        'натуральный': '#E8E5DF',
+        'джинс': '#457B9D'
+      };
+
+      for (const [name, hex] of Object.entries(colorMap)) {
+        if (key.includes(name)) return hex;
+      }
+      return '#B0A8A0';
+    }
+
     function normalizeProduct(raw) {
       const defaultColors = ["Молочный", "Графит", "Песочный"];
       const defaultHex = ["#F4F1EA", "#323232", "#D4C8B5"];
       const photos = extractImages(raw);
+
+      // Корректное извлечение цвета из колонок color или colors
+      let resolvedColors = [];
+      if (Array.isArray(raw.colors) && raw.colors.length > 0) {
+        resolvedColors = raw.colors;
+      } else if (typeof raw.colors === 'string' && raw.colors.trim().startsWith('[')) {
+        try { resolvedColors = JSON.parse(raw.colors); } catch(e){}
+      } else if (typeof raw.colors === 'string' && raw.colors.trim()) {
+        resolvedColors = raw.colors.split(',').map(c => c.trim()).filter(Boolean);
+      }
+      
+      // Если colors был пуст, проверяем строковое поле color
+      if (!resolvedColors || resolvedColors.length === 0) {
+        if (typeof raw.color === 'string' && raw.color.trim()) {
+          resolvedColors = raw.color.split(',').map(c => c.trim()).filter(Boolean);
+        }
+      }
+
+      if (!resolvedColors || resolvedColors.length === 0) {
+        resolvedColors = defaultColors;
+      }
+
+      // Генерируем палитру hex на основе реальных названий цветов товара
+      const resolvedHex = (Array.isArray(raw.colorHex) && raw.colorHex.length > 0)
+        ? raw.colorHex
+        : resolvedColors.map(c => getColorHex(c));
 
       return {
         id: raw.id,
@@ -687,8 +755,9 @@
         category: raw.category || "Унисекс",
         price: raw.price ? Number(raw.price) : 3500,
         size: raw.size || raw.volume || "XS, S, M, L",
-        colors: raw.colors || defaultColors,
-        colorHex: raw.colorHex || defaultHex,
+        color: resolvedColors.join(', '),
+        colors: resolvedColors,
+        colorHex: resolvedHex,
         image_url: photos[0],
         gallery: photos,
         composition: raw.composition || "100% натуральные премиальные волокна.",
@@ -718,9 +787,10 @@
       grid.innerHTML = filtered.map(item => {
         const sizesList = (item.size || "S, M, L").split(',').map(s => s.trim());
         const colorsList = item.colors || ["Натуральный"];
-        const hexList = item.colorHex || ["#D4C8B5", "#2F3131"];
+        const hexList = item.colorHex || colorsList.map(c => getColorHex(c));
         const formattedPrice = Number(item.price).toLocaleString("ru-RU");
         const photosCount = (item.gallery && item.gallery.length) || 1;
+        const colorTitle = colorsList.join(', ');
 
         return `
           <article class="group flex flex-col justify-between bg-transparent transition duration-300">
@@ -755,7 +825,7 @@
 
               <!-- Быстрый просмотр плашка при наведении (десктоп) -->
               <div class="hidden sm:flex absolute inset-x-3 bottom-3 py-2.5 px-3 bg-white/95 backdrop-blur-md rounded-xl text-center items-center justify-center text-[11px] font-medium uppercase tracking-wider text-charcoal opacity-0 group-hover:opacity-100 transition duration-300 shadow-sm">
-                Быстрый просмотр (до 5 фото)
+                Быстрый просмотр
               </div>
             </div>
 
@@ -763,12 +833,16 @@
             <div class="pt-3 pb-1 flex flex-col flex-1 justify-between space-y-2">
               
               <div>
-                <!-- Точки доступных цветов -->
-                <div class="flex items-center gap-1.5 mb-1.5">
-                  ${hexList.slice(0, 4).map(hex => `
-                    <span class="w-2.5 h-2.5 rounded-full border border-neutral-300/80 shadow-2xs" style="background-color: ${hex}"></span>
-                  `).join('')}
-                  ${colorsList.length > 4 ? `<span class="text-[9px] text-neutral-400 font-mono">+${colorsList.length - 4}</span>` : ''}
+                <!-- Точки цветов и текстовое обозначение цвета -->
+                <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                  <div class="flex items-center gap-1">
+                    ${hexList.slice(0, 4).map(hex => `
+                      <span class="w-2.5 h-2.5 rounded-full border border-neutral-300 shadow-2xs" style="background-color: ${hex}"></span>
+                    `).join('')}
+                  </div>
+                  <span class="text-[10px] text-neutral-600 font-medium tracking-tight">
+                    ${escapeHtml(colorTitle)}
+                  </span>
                 </div>
 
                 <!-- Название изделия -->
@@ -866,9 +940,9 @@
 
       // Цвета
       const colorContainer = document.getElementById("qvColorOptions");
-      const hexList = item.colorHex || ["#D4C8B5", "#2F3131", "#FAF9F6"];
+      const hexList = item.colorHex || colors.map(c => getColorHex(c));
       colorContainer.innerHTML = colors.map((col, idx) => {
-        const hex = hexList[idx] || "#C8C4BD";
+        const hex = hexList[idx] || getColorHex(col);
         const isSelected = col === selectedColor;
         return `
           <button 
