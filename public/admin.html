@@ -317,6 +317,22 @@
 
           </div>
 
+          <!-- Описание товара и состав -->
+          <div>
+            <label for="productDescription" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Описание товара / Состав
+            </label>
+            <textarea 
+              id="productDescription" 
+              rows="2" 
+              placeholder="Например: 100% лен высшей категории European Flax. Прямой свободный крой, легкая фактура и выверенная посадка." 
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition resize-none"
+            ></textarea>
+            <p class="text-[11px] text-slate-400 mt-1 font-light">
+              Это описание отображается покупателям в окне быстрого просмотра на витрине.
+            </p>
+          </div>
+
           <!-- Кнопка отправки формы -->
           <div class="pt-2">
             <button 
@@ -514,6 +530,19 @@
               class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
             />
           </div>
+        </div>
+
+        <!-- Описание товара и состав -->
+        <div>
+          <label for="editProductDescription" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+            Описание товара / Состав
+          </label>
+          <textarea 
+            id="editProductDescription" 
+            rows="2" 
+            placeholder="Описание изделия, состав и особенности посадки"
+            class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition resize-none"
+          ></textarea>
         </div>
 
         <!-- Кнопки действий -->
@@ -867,25 +896,29 @@
         // а также передаем массив в gallery/images для продвинутых схем
         const allPhotosString = uploadedUrls.join(',');
         const colorsArray = color.split(',').map(c => c.trim()).filter(Boolean);
+        const descField = document.getElementById("productDescription");
+        const description = descField ? descField.value.trim() : "";
 
         submitBtnText.textContent = "Сохранение в базу данных...";
-        statusText.textContent = "Сохраняем товар, размеры и цвет в таблицу products...";
+        statusText.textContent = "Сохраняем товар, размеры, цвет и описание в таблицу products...";
 
-        // Интеллектуальный подбор полей в зависимости от схемы таблицы в Supabase (size/volume/color)
+        // Интеллектуальный подбор полей в зависимости от схемы таблицы в Supabase (size/volume/color/description)
         const candidatePayloads = [
-          // 1. Полная модель (все поля: size, color, gallery)
+          // 1. Полная модель со всеми полями: description + composition + size + color + gallery
+          { name, category, price: priceVal, size, color, colors: colorsArray, description, composition: description, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
+          // 2. С description (без composition)
+          { name, category, price: priceVal, size, color, colors: colorsArray, description, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
+          // 3. С volume вместо size + description
+          { name, category, price: priceVal, volume: size, color, colors: colorsArray, description, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
+          // 4. Без описания (если в таблице Supabase еще нет колонки description)
           { name, category, price: priceVal, size, color, colors: colorsArray, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
-          // 2. С колонкой volume вместо size (если таблица создавалась по ранней схеме)
           { name, category, price: priceVal, volume: size, color, colors: colorsArray, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
-          // 3. Стандартная модель с color и size
+          { name, category, price: priceVal, size, color, description, image_url: allPhotosString },
+          { name, category, price: priceVal, volume: size, color, description, image_url: allPhotosString },
           { name, category, price: priceVal, size, color, image_url: allPhotosString },
-          // 4. Стандартная модель с color и volume
           { name, category, price: priceVal, volume: size, color, image_url: allPhotosString },
-          // 5. Модель со size без color
           { name, category, price: priceVal, size, image_url: allPhotosString },
-          // 6. Модель с volume без color
           { name, category, price: priceVal, volume: size, image_url: allPhotosString },
-          // 7. Базовая модель (гарантированные поля)
           { name, category, price: priceVal, image_url: allPhotosString }
         ];
 
@@ -1340,6 +1373,12 @@
       const colorVal = prod.color || (Array.isArray(prod.colors) ? prod.colors.join(', ') : "") || "";
       document.getElementById("editProductColor").value = colorVal;
 
+      const descVal = prod.description || prod.composition || "";
+      const editDescEl = document.getElementById("editProductDescription");
+      if (editDescEl) {
+        editDescEl.value = descVal;
+      }
+
       document.getElementById("editProductModal").classList.remove("hidden");
       document.body.classList.add("overflow-hidden");
     }
@@ -1364,6 +1403,8 @@
       const priceVal = parseFloat(document.getElementById("editProductPrice").value);
       const size = document.getElementById("editProductSize").value.trim();
       const color = document.getElementById("editProductColor").value.trim();
+      const editDescEl = document.getElementById("editProductDescription");
+      const description = editDescEl ? editDescEl.value.trim() : "";
 
       if (!name || isNaN(priceVal) || !size || !color) {
         showToast("Пожалуйста, заполните все обязательные поля", "error");
@@ -1379,6 +1420,16 @@
       try {
         // Адаптивное обновление полей в зависимости от схемы колонок Supabase
         const updateCandidates = [
+          // 1. Полная модель с описанием и составом
+          { name: name, category: category, price: priceVal, size: size, color: color, colors: colorsArray, description: description, composition: description },
+          // 2. С description (без composition)
+          { name: name, category: category, price: priceVal, size: size, color: color, colors: colorsArray, description: description },
+          // 3. С volume вместо size + description
+          { name: name, category: category, price: priceVal, volume: size, color: color, colors: colorsArray, description: description },
+          // 4. С description без colorsArray
+          { name: name, category: category, price: priceVal, size: size, color: color, description: description },
+          { name: name, category: category, price: priceVal, volume: size, color: color, description: description },
+          // 5. Без описания (если в таблице БД нет такой колонки)
           { name: name, category: category, price: priceVal, size: size, color: color, colors: colorsArray },
           { name: name, category: category, price: priceVal, volume: size, color: color, colors: colorsArray },
           { name: name, category: category, price: priceVal, size: size, color: color },

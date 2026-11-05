@@ -749,6 +749,8 @@
         ? raw.colorHex
         : resolvedColors.map(c => getColorHex(c));
 
+      const descText = raw.description || raw.composition || "";
+
       return {
         id: raw.id,
         name: raw.name || raw.title || "Дизайнерское изделие",
@@ -758,10 +760,11 @@
         color: resolvedColors.join(', '),
         colors: resolvedColors,
         colorHex: resolvedHex,
+        description: descText,
+        composition: raw.composition || raw.description || "100% натуральные премиальные волокна.",
+        fit: raw.fit || "Идеальная базовая посадка. Комфортный силуэт.",
         image_url: photos[0],
-        gallery: photos,
-        composition: raw.composition || "100% натуральные премиальные волокна.",
-        fit: raw.fit || "Идеальная базовая посадка. Комфортный силуэт."
+        gallery: photos
       };
     }
 
@@ -929,8 +932,10 @@
       document.getElementById("qvTitle").textContent = item.name;
       document.getElementById("qvCategoryBadge").textContent = item.category || "Изделие";
       document.getElementById("qvArticle").textContent = `Арт. SD-${String(item.id).substring(0, 6)}`;
-      document.getElementById("qvPrice").textContent = `${Number(item.price).toLocaleString("ru-RU")} сом`;
-      document.getElementById("qvComposition").innerHTML = `<strong class="font-semibold text-charcoal">Состав:</strong> ${escapeHtml(item.composition)}`;
+      const formattedPrice = Number(item.price || 0).toLocaleString("ru-RU");
+      document.getElementById("qvPrice").textContent = `${formattedPrice} сом`;
+      const detailedDesc = item.description || item.composition || "100% натуральные премиальные волокна.";
+      document.getElementById("qvComposition").innerHTML = `<strong class="font-semibold text-charcoal">Описание и состав:</strong> ${escapeHtml(detailedDesc)}`;
       document.getElementById("qvFit").innerHTML = `<strong class="font-semibold text-charcoal">Посадка:</strong> ${escapeHtml(item.fit)}`;
       document.getElementById("qvSelectedColorName").textContent = selectedColor;
 
