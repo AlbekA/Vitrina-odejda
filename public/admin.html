@@ -737,63 +737,44 @@
         submitBtnText.textContent = "Сохранение в базу данных...";
         statusText.textContent = "Сохраняем товар, размеры и цвет в таблицу products...";
 
-        const newProductPayload = {
-          name: name,
-          category: category,
-          price: priceVal,
-          size: size,
-          color: color,
-          colors: colorsArray,
-          image_url: allPhotosString,
-          gallery: uploadedUrls,
-          images: uploadedUrls
-        };
+        // Интеллектуальный подбор полей в зависимости от схемы таблицы в Supabase (size/volume/color)
+        const candidatePayloads = [
+          // 1. Полная модель (все поля: size, color, gallery)
+          { name, category, price: priceVal, size, color, colors: colorsArray, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
+          // 2. С колонкой volume вместо size (если таблица создавалась по ранней схеме)
+          { name, category, price: priceVal, volume: size, color, colors: colorsArray, image_url: allPhotosString, gallery: uploadedUrls, images: uploadedUrls },
+          // 3. Стандартная модель с color и size
+          { name, category, price: priceVal, size, color, image_url: allPhotosString },
+          // 4. Стандартная модель с color и volume
+          { name, category, price: priceVal, volume: size, color, image_url: allPhotosString },
+          // 5. Модель со size без color
+          { name, category, price: priceVal, size, image_url: allPhotosString },
+          // 6. Модель с volume без color
+          { name, category, price: priceVal, volume: size, image_url: allPhotosString },
+          // 7. Базовая модель (гарантированные поля)
+          { name, category, price: priceVal, image_url: allPhotosString }
+        ];
 
-        let { data: insertedData, error: insertError } = await supabaseClient
-          .from(TABLE_NAME)
-          .insert([newProductPayload])
-          .select();
+        let insertSuccess = false;
+        let lastInsertError = null;
 
-        // Поэтапный fallback при несоответствии опциональных колонок
-        if (insertError) {
-          const fallbackWithColor = {
-            name: name,
-            category: category,
-            price: priceVal,
-            size: size,
-            color: color,
-            image_url: allPhotosString
-          };
-          let retryRes = await supabaseClient.from(TABLE_NAME).insert([fallbackWithColor]).select();
-          if (retryRes.error) {
-            const fallbackSimple = {
-              name: name,
-              category: category,
-              price: priceVal,
-              size: size,
-              image_url: allPhotosString
-            };
-            retryRes = await supabaseClient.from(TABLE_NAME).insert([fallbackSimple]).select();
-            if (retryRes.error && retryRes.error.message.includes('column "size"')) {
-              const fallbackVolume = {
-                name: name,
-                category: category,
-                price: priceVal,
-                volume: size,
-                image_url: allPhotosString
-              };
-              const retryRes2 = await supabaseClient.from(TABLE_NAME).insert([fallbackVolume]).select();
-              insertError = retryRes2.error;
-            } else {
-              insertError = retryRes.error;
-            }
-          } else {
-            insertError = null;
+        for (const payload of candidatePayloads) {
+          const res = await supabaseClient.from(TABLE_NAME).insert([payload]).select();
+          if (!res.error) {
+            insertSuccess = true;
+            break;
+          }
+          lastInsertError = res.error;
+          const msg = (res.error.message || "").toLowerCase();
+          const isColumnIssue = msg.includes("column") || msg.includes("schema cache") || msg.includes("could not find");
+          if (!isColumnIssue) {
+            // Другая ошибка (например, RLS или права доступа) — нет смысла пробовать другие варианты полей
+            break;
           }
         }
 
-        if (insertError) {
-          throw new Error("Ошибка записи в базу: " + insertError.message);
+        if (!insertSuccess) {
+          throw new Error("Ошибка записи в базу: " + (lastInsertError ? lastInsertError.message : "Неизвестная ошибка"));
         }
 
         showToast(`Товар успешно добавлен с ${uploadedUrls.length} фото!`, "success");
